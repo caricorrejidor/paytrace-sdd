@@ -14,7 +14,7 @@ Aplica reglas fijas al trace, cita el evento que prueba la causa y recomienda el
 - Tests: `uv run pytest`
 
 ## Qué NO hacer
-- No devolver una causa sin citar exactamente un evento clave por su ID. Si la evidencia no alcanza, responder "no concluyente" sin eventos citados.
+- No devolver una causa sin citar exactamente un evento clave por su ID. Si la evidencia no alcanza o es contradictoria, responder "no concluyente" sin nombrar causa: sin eventos citados si no hay ningún evento clave, o citando los eventos en conflicto si hay más de uno (ver constitución, principio I).
   Tampoco diagnosticar operaciones OK.
 - No usar LLM ni nada aleatorio en el diagnóstico: solo reglas fijas, y la misma operación siempre da el mismo resultado.
 - No conectar con bancos, proveedores ni sistemas reales, y no usar datos personales reales: todo es simulado.
