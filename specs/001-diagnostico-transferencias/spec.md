@@ -33,7 +33,10 @@ diagnostica operaciones sin fallo.
 ### Casos simulados
 
 Cada operación se genera a partir de uno de estos casos. Las reglas de diagnóstico **no** conocen el
-caso: solo ven el trace. El **evento clave** es el que prueba la causa.
+caso: solo ven el trace, el estado y la hora de referencia. El **evento clave** es el que prueba la
+causa. Para las reglas, un evento clave es únicamente un rechazo en origen con código AM04, un rechazo
+del banco destino con código AC01 o un rechazo por timeout con código AB05; la acreditación en
+destino del caso OK no cuenta como evento clave para las reglas.
 
 | Caso | Estado | Trace simulado (evento clave en negrita) | Causa | Recomendación |
 |---|---|---|---|---|
@@ -55,6 +58,17 @@ Los códigos de motivo siguen ISO 20022 y el MVP usa solo tres: AM04 (fondos ins
 - Q: ¿Qué recomendación lleva un "no concluyente" sin ningún evento clave que no viene del caso trace incompleto (p. ej. una fallida cuyo trace no encaja en ninguna regla)? → A: La misma para todo "no concluyente" sin evento clave: "Pedir los logs del proveedor desde el último evento conocido".
 - Q: ¿Las operaciones generadas se conservan cuando la aplicación se reinicia? → A: No: existen solo mientras la aplicación está en uso; al reiniciar se pierden y quedan solo el conjunto de evaluación y el archivo de prueba de plazo.
 - Q: ¿Qué hora de referencia usa cada grupo de operaciones? → A: Cada operación fija (conjunto de evaluación y archivo de prueba de plazo) trae su propia hora de referencia fija en los datos; para las operaciones generadas, la hora de referencia es el momento en que el analista pide el diagnóstico, tomado fuera de las reglas y pasado como dato.
+- Q: ¿Qué responde una operación fallida sin ningún evento clave cuyo último evento está dentro de los 10 minutos? → A: "No concluyente" enseguida; el plazo de espera aplica solo a pendientes.
+- Q: ¿Las reglas usan el estado de la operación o solo el trace? → A: Deciden con el trace, el estado y la hora de referencia, sin conocer el caso. Que el estado no coincida con el trace no ocurre con datos simulados (supuesto).
+- Q: ¿Qué cuenta como evento clave para las reglas? → A: Solo el rechazo en origen con AM04, el rechazo del banco destino con AC01 y el rechazo por timeout con AB05. Más de un evento clave, aunque tengan el mismo código, es evidencia contradictoria.
+- Q: ¿Cómo se verifican FR-021 (fallida sin evento clave) y FR-022 (evidencia contradictoria)? → A: Con escenarios de aceptación propios y un archivo fijo de casos borde, aparte del conjunto de evaluación, con una fallida sin evento clave y una fallida con dos eventos clave.
+- Q: ¿Se cubre con datos fijos la evidencia contradictoria con el mismo código repetido? → A: Sí: el archivo de casos borde suma una tercera fallida con dos rechazos por timeout AB05 (orden enviada → débito en origen → envío al proveedor → rechazo AB05 → rechazo AB05), con su escenario en la historia 2.
+- Q: ¿Los datos fijos aparte del conjunto de evaluación se buscan, se listan y ocupan IDs? → A: Sí: todos los datos fijos se cargan al iniciar, se pueden buscar y listar, y sus IDs cuentan como ocupados.
+- Q: ¿Qué IDs están prohibidos? → A: Ninguna operación, fija o generada, usa un ID `OP-9xxx`.
+- Q: ¿Cómo se ordenan dos eventos con el mismo momento? → A: No pueden existir: dentro de un trace, cada evento tiene un momento estrictamente posterior al anterior.
+- Q: ¿Qué es "siguiente ID libre"? → A: El número siguiente al mayor ID existente.
+- Q: ¿De dónde sale la operación OK de la prueba independiente de la historia 2? → A: Se genera con la historia 4, porque el conjunto de evaluación no tiene operaciones OK.
+- Q: ¿Cuántas mediciones cuentan para SC-005 y SC-006? → A: 5 por cada una de las 25 operaciones del conjunto de evaluación (125 en total), desde el pedido del analista hasta que ve el resultado completo.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -91,18 +105,20 @@ de casos.
 ### Historia de usuario 2 - No diagnosticar sin respaldo (Priority: P1)
 
 Cuando no hay nada que diagnosticar o la evidencia no alcanza, PayTrace lo dice y no nombra una
-causa: "no concluyente" si el trace no prueba ninguna causa y ya pasó el plazo de espera; "La
-operación sigue en curso" si está pendiente dentro del plazo; "La operación no tiene un fallo para
-investigar" si la operación es OK.
+causa: "no concluyente" si el trace no tiene ningún evento clave (en una pendiente, recién cuando ya
+pasó el plazo de espera) o si tiene más de uno; "La operación sigue en curso" si está pendiente
+dentro del plazo; "La operación no tiene un fallo para investigar" si la operación es OK.
 
 **Why this priority**: es el principio de producto ("evidencia o nada") y de la constitución
 (principio I). Un diagnóstico inventado es peor que ninguno (OBJ-3).
 
 **Independent Test**: pedir el diagnóstico de las 5 operaciones con trace incompleto del conjunto de
-evaluación, de una operación OK y de las 2 operaciones del archivo de prueba de plazo, y verificar
-las respuestas sin causa.
+evaluación, de una operación OK generada con la historia 4 (el conjunto de evaluación no tiene
+operaciones OK), de las 2 operaciones del archivo de prueba de plazo y de las 3 del archivo de casos
+borde, y verificar las respuestas sin causa.
 
-**Acceptance Scenarios** (AC-08, AC-09, AC-10, AC-12, AC-15):
+**Acceptance Scenarios** (AC-08, AC-09, AC-10, AC-12, AC-15; los escenarios 5 a 7 no tienen AC en
+el PRD):
 
 1. **Dado** una operación del caso "trace incompleto", **Cuando** el analista pide el diagnóstico,
    **Entonces** la causa es "no concluyente", no aparece ninguna otra causa de la tabla, no cita
@@ -116,6 +132,18 @@ las respuestas sin causa.
 4. **Dado** la operación pendiente del archivo de prueba de plazo cuyo último evento es exactamente
    10 minutos anterior a su hora de referencia, **Cuando** pide el diagnóstico, **Entonces** el
    sistema muestra "La operación sigue en curso" y no muestra causa, eventos citados ni recomendación.
+5. **Dado** la operación fallida del archivo de casos borde que no tiene ningún evento clave,
+   **Cuando** el analista pide el diagnóstico, **Entonces** la causa es "no concluyente", no aparece
+   ninguna otra causa de la tabla, no cita ningún evento y la recomendación es "Pedir los logs del
+   proveedor desde el último evento conocido".
+6. **Dado** la operación fallida del archivo de casos borde que tiene dos eventos clave con códigos
+   distintos (AC01 y AB05), **Cuando** el analista pide el diagnóstico, **Entonces** la causa es "no
+   concluyente", no aparece ninguna otra causa de la tabla, cita exactamente esos dos eventos por su
+   ID y la recomendación es "Evidencia contradictoria: revisar manualmente los eventos citados".
+7. **Dado** la operación fallida del archivo de casos borde que tiene dos rechazos por timeout con
+   código AB05, **Cuando** el analista pide el diagnóstico, **Entonces** la causa es "no concluyente"
+   (no "timeout"), no aparece ninguna otra causa de la tabla, cita exactamente esos dos eventos por
+   su ID y la recomendación es "Evidencia contradictoria: revisar manualmente los eventos citados".
 
 ---
 
@@ -203,15 +231,16 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
   más de 10 minutos.
 - **Pedir el diagnóstico varias veces**: la misma operación da siempre el mismo resultado (misma
   causa, mismos eventos citados, misma recomendación).
-- **Trace sin ningún evento clave en una operación que no es del caso "trace incompleto"** (p. ej. una
-  operación fallida cuyo trace no encaja en ninguna regla): la respuesta es "no concluyente", sin
-  causa y sin eventos citados (constitución, principio I). El MVP no genera operaciones así, pero las
-  reglas solo ven el trace. La recomendación es la misma que la del caso trace incompleto: "Pedir los
-  logs del proveedor desde el último evento conocido".
-- **Evidencia contradictoria (más de un evento clave en el trace)**: la respuesta es "no concluyente",
-  no nombra causa, cita por su ID todos los eventos clave en conflicto y recomienda "Evidencia
-  contradictoria: revisar manualmente los eventos citados" (constitución, principio I; AGENTS.md).
-  El "sin eventos citados" del PRD (RF-08) aplica solo cuando no hay ningún evento clave.
+- **Operación fallida sin ningún evento clave** (su trace no encaja en ninguna regla): la respuesta es
+  "no concluyente" enseguida, sin esperar el plazo (que aplica solo a pendientes), sin causa y sin
+  eventos citados (constitución, principio I). La recomendación es la misma que la del caso trace
+  incompleto: "Pedir los logs del proveedor desde el último evento conocido". El generador no crea
+  operaciones así; se cubren con el archivo de casos borde.
+- **Evidencia contradictoria (más de un evento clave en el trace, aunque tengan el mismo código)**:
+  la respuesta es "no concluyente", no nombra causa, cita por su ID todos los eventos clave en
+  conflicto y recomienda "Evidencia contradictoria: revisar manualmente los eventos citados"
+  (constitución, principio I; AGENTS.md). El "sin eventos citados" del PRD (RF-08) aplica solo cuando
+  no hay ningún evento clave. Se cubre con el archivo de casos borde.
 - **Se agotan los IDs disponibles para operaciones generadas** (no se pueden usar `OP-9xxx`): el PRD
   no define qué pasa. Se considera fuera del volumen esperado de la demo (ver Assumptions).
 
@@ -225,9 +254,10 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
   cualquiera de los seis casos de la tabla de casos, con el estado y la secuencia de eventos que la
   tabla define para ese caso.
 - **FR-002**: Cada operación DEBE tener un ID único con formato `OP-` seguido de 4 dígitos, en
-  mayúscula (ej.: `OP-0001`).
-- **FR-003**: Una operación generada DEBE tomar el siguiente ID libre, sin repetir el ID de ninguna
-  operación existente (incluidas las del conjunto de evaluación), y NUNCA un ID `OP-9xxx`.
+  mayúscula (ej.: `OP-0001`). Ninguna operación, fija o generada, usa un ID `OP-9xxx`.
+- **FR-003**: Una operación generada DEBE tomar el siguiente ID libre: el número siguiente al mayor ID
+  existente (contando todos los datos fijos y las generadas), sin repetir ningún ID y NUNCA un ID
+  `OP-9xxx`.
 - **FR-004**: Una operación del caso "trace incompleto" DEBE generarse con su último evento más de
   10 minutos anterior al momento de la generación.
 - **FR-005**: Cada operación DEBE tener uno de tres estados: **OK** (se acreditó en destino),
@@ -241,8 +271,20 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
   pendientes fijas, una con su último evento 2 minutos anterior a su hora de referencia y otra con su
   último evento exactamente 10 minutos anterior a su hora de referencia.
 - **FR-009**: Las operaciones generadas DEBEN existir mientras la aplicación está en uso y NO se
-  conservan al reiniciarla: después de un reinicio solo quedan el conjunto de evaluación y el archivo
-  de prueba de plazo, iguales que antes.
+  conservan al reiniciarla: después de un reinicio solo quedan los datos fijos (conjunto de
+  evaluación, archivo de prueba de plazo y archivo de casos borde), iguales que antes.
+- **FR-029**: El sistema DEBE tener disponible el archivo de casos borde: 3 operaciones fallidas
+  fijas, aparte del conjunto de evaluación, con IDs y horarios que no cambian entre usos:
+  - una sin ningún evento clave: orden enviada → débito en origen → reversa del débito;
+  - una con dos eventos clave de códigos distintos: orden enviada → débito en origen → rechazo del
+    banco destino, código AC01 → rechazo por timeout, código AB05 → reversa del débito;
+  - una con dos eventos clave del mismo código: orden enviada → débito en origen → envío al
+    proveedor → rechazo por timeout, código AB05 → rechazo por timeout, código AB05.
+- **FR-030**: Todos los datos fijos (conjunto de evaluación, archivo de prueba de plazo y archivo de
+  casos borde) DEBEN estar cargados desde el inicio, poder buscarse y listarse como cualquier otra
+  operación, y sus IDs DEBEN contar como ocupados para FR-003.
+- **FR-031**: Dentro de un trace, cada evento DEBE tener un momento estrictamente posterior al del
+  evento anterior; no hay dos eventos con el mismo momento.
 
 **Búsqueda, lista y trace**
 
@@ -251,16 +293,18 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
   "Operación no encontrada".
 - **FR-012** (RF-03): Si el ID buscado está vacío o no respeta el formato, el sistema DEBE mostrar
   "Ingresá un ID con formato OP-0000" y NO DEBE mostrar ninguna operación ni "Operación no encontrada".
-- **FR-013** (RF-02): El sistema DEBERÍA listar todas las operaciones (conjunto de evaluación y
-  generadas) con su estado.
+- **FR-013** (RF-02): El sistema DEBERÍA listar todas las operaciones (datos fijos y generadas) con
+  su estado.
 - **FR-014** (RF-04): El sistema DEBE mostrar el trace de una operación con todos sus eventos en
   orden cronológico, del más antiguo al más nuevo.
 
 **Diagnóstico**
 
 - **FR-015**: El diagnóstico DEBE darse solo cuando el analista lo pide; no es automático.
-- **FR-016**: Las reglas de diagnóstico DEBEN decidir solo a partir del trace (y de la hora de
-  referencia para el plazo de espera), sin conocer el caso con el que se generó la operación.
+- **FR-016**: Las reglas de diagnóstico DEBEN decidir solo a partir del trace, el estado de la
+  operación y la hora de referencia, sin conocer el caso con el que se generó la operación. Para las
+  reglas, un evento clave es únicamente un rechazo en origen con código AM04, un rechazo del banco
+  destino con código AC01 o un rechazo por timeout con código AB05.
 - **FR-017**: El diagnóstico DEBE tener tres campos: causa, eventos citados (por ID de evento) y
   recomendación.
 - **FR-018** (RF-05): Para una operación fallida, la causa DEBE ser exactamente uno de los valores de
@@ -271,24 +315,24 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
 - **FR-020** (RF-07): El diagnóstico DEBE mostrar la recomendación de la tabla de casos que
   corresponde al trace. Para el timeout, la recomendación DEBE distinguir si el trace tiene o no la
   reversa del débito después del rechazo.
-- **FR-021** (RF-08): Si el trace no prueba ninguna causa y ya pasó el plazo de espera, el
-  diagnóstico DEBE tener la causa "no concluyente", sin ninguna otra causa y sin eventos citados.
-  Todo "no concluyente" sin ningún evento clave (pendiente con el plazo vencido o fallida cuyo trace
-  no encaja en ninguna regla) DEBE recomendar "Pedir los logs del proveedor desde el último evento
-  conocido".
-- **FR-022**: Si la evidencia es contradictoria (más de un evento clave), el diagnóstico DEBE ser "no
-  concluyente", NO DEBE nombrar ninguna causa, DEBE citar por su ID todos los eventos clave en
+- **FR-021** (RF-08): Si el trace no tiene ningún evento clave, el diagnóstico DEBE tener la causa
+  "no concluyente", sin ninguna otra causa y sin eventos citados, y DEBE recomendar "Pedir los logs
+  del proveedor desde el último evento conocido". En una operación fallida esto aplica enseguida; en
+  una pendiente, solo cuando ya pasó el plazo de espera (si no, aplica FR-024).
+- **FR-022**: Si la evidencia es contradictoria (más de un evento clave, aunque tengan el mismo
+  código), el diagnóstico DEBE ser "no concluyente", NO DEBE nombrar ninguna causa, DEBE citar por su
+  ID todos los eventos clave en
   conflicto y DEBE recomendar "Evidencia contradictoria: revisar manualmente los eventos citados".
 - **FR-023** (RF-09): Si la operación es OK, el sistema DEBE mostrar "La operación no tiene un fallo
   para investigar" y NO DEBE mostrar causa, eventos citados ni recomendación.
 - **FR-024** (RF-10): Si la operación está pendiente y todavía no pasó el plazo de espera, el sistema
   DEBE mostrar "La operación sigue en curso" y NO DEBE mostrar causa, eventos citados ni recomendación.
-- **FR-025**: El plazo de espera DEBE considerarse vencido solo cuando pasaron **más** de 10 minutos
-  entre el último evento del trace y la hora de referencia. Con exactamente 10 minutos, la operación
-  sigue en curso.
+- **FR-025**: El plazo de espera aplica solo a operaciones pendientes. DEBE considerarse vencido solo
+  cuando pasaron **más** de 10 minutos entre el último evento del trace y la hora de referencia. Con
+  exactamente 10 minutos, la operación sigue en curso.
 - **FR-026**: La hora de referencia ("ahora") DEBE ser un dato de entrada del diagnóstico; las reglas
-  no dependen de nada más que el trace y esa hora. Cada operación del conjunto de evaluación y del
-  archivo de prueba de plazo DEBE traer su propia hora de referencia fija en los datos, de modo que
+  no dependen de nada más que el trace, el estado y esa hora. Cada operación de los datos fijos
+  (conjunto de evaluación, archivo de prueba de plazo y archivo de casos borde) DEBE traer su propia hora de referencia fija en los datos, de modo que
   las 5 operaciones con trace incompleto del conjunto de evaluación tengan su último evento más de 10
   minutos anterior a ella. Para las operaciones generadas, la hora de referencia es el momento en que
   el analista pide el diagnóstico; ese momento se toma fuera de las reglas y se les pasa como dato.
@@ -304,11 +348,15 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
 ### Key Entities *(include if feature involves data)*
 
 - **Operación**: transferencia simulada. Tiene ID único (`OP-` + 4 dígitos), estado (OK, fallida,
-  pendiente) y un trace. Proviene del conjunto de evaluación, del archivo de prueba de plazo o de una
-  generación del analista.
+  pendiente) y un trace. Proviene de los datos fijos (conjunto de evaluación, archivo de prueba de
+  plazo o archivo de casos borde) o de una generación del analista.
 - **Evento**: hecho del trace. Tiene ID de evento, momento, tipo, emisor (origen, proveedor o banco
   destino) y, si es un rechazo, un código de motivo ISO 20022.
-- **Trace**: lista de eventos de una operación, unificada y en orden cronológico.
+- **Evento clave**: para las reglas, un rechazo en origen con AM04, un rechazo del banco destino con
+  AC01 o un rechazo por timeout con AB05. Un trace con exactamente uno permite nombrar la causa; con
+  ninguno o con más de uno, la respuesta es "no concluyente".
+- **Trace**: lista de eventos de una operación, unificada y en orden cronológico, con momentos
+  estrictamente crecientes.
 - **Caso**: escenario con el que se generó la operación (fila de la tabla de casos). Define estado,
   secuencia de eventos, evento clave, causa y recomendación. Las reglas no lo ven.
 - **Diagnóstico**: respuesta a un pedido del analista: causa, eventos citados y recomendación. En
@@ -318,6 +366,8 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
   y horarios estables.
 - **Archivo de prueba de plazo**: 2 operaciones pendientes fijas, aparte del conjunto de evaluación,
   usadas solo para verificar el límite del plazo de espera.
+- **Archivo de casos borde**: 3 operaciones fallidas fijas, aparte del conjunto de evaluación, para
+  verificar el "no concluyente" sin evento clave y con evidencia contradictoria (FR-029).
 - **Hora de referencia**: el "ahora" contra el que se mide el plazo de espera. Fija y propia de cada
   operación en los datos fijos; para las operaciones generadas, el momento del pedido de diagnóstico.
 
@@ -334,10 +384,12 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
   evaluación termina como "no concluyente".
 - **SC-004** (OBJ-4): El **100 %** de las 20 operaciones con trace completo del conjunto de
   evaluación recibe la causa que corresponde a su caso.
-- **SC-005** (RNF-01): El diagnóstico se muestra en **≤ 2 segundos** en al menos el 95 % de las
-  mediciones sobre el conjunto de evaluación.
+- **SC-005** (RNF-01): El diagnóstico se muestra en **≤ 2 segundos** en al menos el 95 % de 125
+  mediciones (5 por cada operación del conjunto de evaluación), cada una desde que el analista pide
+  el diagnóstico hasta que ve el resultado completo.
 - **SC-006** (RNF-02): El trace de una operación se muestra en **≤ 2 segundos** en al menos el 95 %
-  de las mediciones sobre el conjunto de evaluación.
+  de 125 mediciones (5 por cada operación del conjunto de evaluación), cada una desde que el analista
+  abre la operación hasta que ve todos sus eventos.
 - **SC-007** (RNF-04): Pedir **5 veces** el diagnóstico de cada operación del conjunto de evaluación
   da el mismo resultado las 5 veces en el **100 %** de las operaciones.
 - **SC-008** (RNF-03): **0** datos personales reales en todo el sistema.
@@ -359,6 +411,9 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
   recomendaciones) son los del PRD, literales, salvo los que se definen en Clarifications.
 - Para los casos de timeout, "con reversa" y "sin reversa" se distinguen solo por la presencia de la
   reversa del débito en el trace, porque las reglas no conocen el caso (PRD §1, término "Caso").
+- El estado de una operación siempre coincide con su trace (p. ej. una OK siempre tiene la
+  acreditación en destino), porque todos los datos son simulados. No se define qué pasa si no
+  coinciden.
 - Un agente de IA para traces que no encajen en ninguna regla queda para después del MVP (PRD §6–§7).
 - Dependencia: la lista oficial de códigos de motivo ISO 20022 (External Code Sets), para mantener
   alineados AM04, AC01 y AB05 (PRD §7).

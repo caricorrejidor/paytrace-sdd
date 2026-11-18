@@ -31,15 +31,29 @@
 
 ## Notes
 
-- Quedan 4 marcadores [NEEDS CLARIFICATION], uno más que el límite habitual de 3: el pedido fue no
-  inventar donde el PRD no decide, así que no se reemplazó ninguno por una suposición.
-  1. Recomendación para "no concluyente" fuera del caso trace incompleto (Edge Cases).
-  2. Si se citan los eventos en conflicto cuando la evidencia es contradictoria (Edge Cases; PRD
-     RF-08 vs. constitución principio I vs. AGENTS.md).
-  3. Si las operaciones generadas se conservan al reiniciar la aplicación (FR-009).
-  4. Hora de referencia del conjunto de evaluación y de las operaciones generadas (FR-026).
+- 2026-11-18, `/speckit-clarify`: se resolvieron los 4 marcadores [NEEDS CLARIFICATION] (ver
+  spec §Clarifications, sesión 2026-11-18):
+  1. "No concluyente" sin ningún evento clave: siempre "Pedir los logs del proveedor desde el último
+     evento conocido" (FR-021).
+  2. Evidencia contradictoria: cita por ID los eventos clave en conflicto y recomienda "Evidencia
+     contradictoria: revisar manualmente los eventos citados" (FR-022). Se aparta del glosario del
+     PRD, con respaldo en la constitución (principio I) y en AGENTS.md.
+  3. Las operaciones generadas no se conservan al reiniciar la aplicación (FR-009).
+  4. Las operaciones fijas traen su propia hora de referencia; para las generadas es el momento del
+     pedido de diagnóstico, que se pasa a las reglas como dato (FR-026).
+- 2026-11-18, `/speckit-checklist`: la validación detallada está en [validacion.md](validacion.md).
+  La primera corrida dio 26/36 y llevó a destildar "Requirements are testable and unambiguous" y
+  "All acceptance scenarios are defined".
+- 2026-11-18, resolución de hallazgos: se resolvieron los 10 pendientes de validacion.md (36/36) y se
+  volvieron a tildar los dos ítems. Cambios principales: definición de evento clave para las reglas,
+  plazo de espera solo para pendientes, reglas con trace + estado + hora de referencia, archivo de
+  casos borde (FR-029, 3 operaciones) con escenarios 5 a 7 de US2, y FR-030/FR-031 para datos fijos y orden del
+  trace. FR-029–FR-031 se agregaron con numeración nueva para no renumerar los FR existentes.
+- Coherencia con la constitución v1.0.0: los cuatro principios están cubiertos (validacion.md,
+  CHK026–CHK033).
 - Los tiempos de SC-005/SC-006 (≤ 2 s) vienen del PRD (RNF-01/RNF-02) y se expresan como tiempo
-  percibido por el analista, no como métrica técnica.
+  percibido por el analista, no como métrica técnica: 125 mediciones (5 por operación del conjunto
+  de evaluación).
 - Los headings de sección del template se mantienen en inglés para compatibilidad con los comandos
   de Spec Kit; el contenido está en español.
-- Resolver los marcadores con `/speckit-clarify` antes de `/speckit-plan`.
+- Listo para `/speckit-plan`.
