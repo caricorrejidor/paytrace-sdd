@@ -1,6 +1,6 @@
 # Feature Specification: PayTrace — diagnóstico de transferencias fallidas o pendientes
 
-**Feature Branch**: `main` (no se creó una rama para esta feature)
+**Feature Branch**: `001-diagnostico-transferencias`
 
 **Created**: 2026-11-15
 
@@ -46,6 +46,15 @@ caso: solo ven el trace. El **evento clave** es el que prueba la causa.
 
 Los códigos de motivo siguen ISO 20022 y el MVP usa solo tres: AM04 (fondos insuficientes), AC01
 (la cuenta no existe en el banco destino) y AB05 (timeout del banco destino).
+
+## Clarifications
+
+### Session 2026-11-18
+
+- Q: Con evidencia contradictoria (más de un evento clave), ¿se citan los eventos en conflicto? → A: Sí: cita por su ID todos los eventos clave en conflicto, sin nombrar causa, con la recomendación "Evidencia contradictoria: revisar manualmente los eventos citados".
+- Q: ¿Qué recomendación lleva un "no concluyente" sin ningún evento clave que no viene del caso trace incompleto (p. ej. una fallida cuyo trace no encaja en ninguna regla)? → A: La misma para todo "no concluyente" sin evento clave: "Pedir los logs del proveedor desde el último evento conocido".
+- Q: ¿Las operaciones generadas se conservan cuando la aplicación se reinicia? → A: No: existen solo mientras la aplicación está en uso; al reiniciar se pierden y quedan solo el conjunto de evaluación y el archivo de prueba de plazo.
+- Q: ¿Qué hora de referencia usa cada grupo de operaciones? → A: Cada operación fija (conjunto de evaluación y archivo de prueba de plazo) trae su propia hora de referencia fija en los datos; para las operaciones generadas, la hora de referencia es el momento en que el analista pide el diagnóstico, tomado fuera de las reglas y pasado como dato.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -197,14 +206,12 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
 - **Trace sin ningún evento clave en una operación que no es del caso "trace incompleto"** (p. ej. una
   operación fallida cuyo trace no encaja en ninguna regla): la respuesta es "no concluyente", sin
   causa y sin eventos citados (constitución, principio I). El MVP no genera operaciones así, pero las
-  reglas solo ven el trace. Recomendación en este caso: [NEEDS CLARIFICATION: el PRD solo define la
-  recomendación de "no concluyente" para el caso trace incompleto ("Pedir los logs del proveedor desde
-  el último evento conocido"). ¿Se usa la misma para cualquier "no concluyente", otra distinta, o
-  ninguna?]
-- **Evidencia contradictoria (más de un evento clave en el trace)**: la respuesta es "no concluyente"
-  y no nombra causa (constitución, principio I). [NEEDS CLARIFICATION: el PRD (RF-08) dice "sin
-  eventos citados", mientras que la constitución dice que la respuesta PUEDE citar los eventos en
-  conflicto y AGENTS.md dice que los cita. ¿Se citan o no los eventos en conflicto?]
+  reglas solo ven el trace. La recomendación es la misma que la del caso trace incompleto: "Pedir los
+  logs del proveedor desde el último evento conocido".
+- **Evidencia contradictoria (más de un evento clave en el trace)**: la respuesta es "no concluyente",
+  no nombra causa, cita por su ID todos los eventos clave en conflicto y recomienda "Evidencia
+  contradictoria: revisar manualmente los eventos citados" (constitución, principio I; AGENTS.md).
+  El "sin eventos citados" del PRD (RF-08) aplica solo cuando no hay ningún evento clave.
 - **Se agotan los IDs disponibles para operaciones generadas** (no se pueden usar `OP-9xxx`): el PRD
   no define qué pasa. Se considera fuera del volumen esperado de la demo (ver Assumptions).
 
@@ -233,9 +240,9 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
 - **FR-008**: El sistema DEBE tener disponible el archivo de prueba de plazo: 2 operaciones
   pendientes fijas, una con su último evento 2 minutos anterior a su hora de referencia y otra con su
   último evento exactamente 10 minutos anterior a su hora de referencia.
-- **FR-009**: Las operaciones generadas DEBEN [NEEDS CLARIFICATION: el PRD no dice si las
-  operaciones generadas tienen que conservarse cuando la aplicación se reinicia o si alcanza con que
-  existan mientras está en uso. ¿Cuál de las dos?]
+- **FR-009**: Las operaciones generadas DEBEN existir mientras la aplicación está en uso y NO se
+  conservan al reiniciarla: después de un reinicio solo quedan el conjunto de evaluación y el archivo
+  de prueba de plazo, iguales que antes.
 
 **Búsqueda, lista y trace**
 
@@ -266,8 +273,12 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
   reversa del débito después del rechazo.
 - **FR-021** (RF-08): Si el trace no prueba ninguna causa y ya pasó el plazo de espera, el
   diagnóstico DEBE tener la causa "no concluyente", sin ninguna otra causa y sin eventos citados.
+  Todo "no concluyente" sin ningún evento clave (pendiente con el plazo vencido o fallida cuyo trace
+  no encaja en ninguna regla) DEBE recomendar "Pedir los logs del proveedor desde el último evento
+  conocido".
 - **FR-022**: Si la evidencia es contradictoria (más de un evento clave), el diagnóstico DEBE ser "no
-  concluyente" y NO DEBE nombrar ninguna causa (ver Edge Cases sobre si cita los eventos en conflicto).
+  concluyente", NO DEBE nombrar ninguna causa, DEBE citar por su ID todos los eventos clave en
+  conflicto y DEBE recomendar "Evidencia contradictoria: revisar manualmente los eventos citados".
 - **FR-023** (RF-09): Si la operación es OK, el sistema DEBE mostrar "La operación no tiene un fallo
   para investigar" y NO DEBE mostrar causa, eventos citados ni recomendación.
 - **FR-024** (RF-10): Si la operación está pendiente y todavía no pasó el plazo de espera, el sistema
@@ -276,11 +287,11 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
   entre el último evento del trace y la hora de referencia. Con exactamente 10 minutos, la operación
   sigue en curso.
 - **FR-026**: La hora de referencia ("ahora") DEBE ser un dato de entrada del diagnóstico; las reglas
-  no dependen de nada más que el trace y esa hora. Para los datos fijos, la hora de referencia es:
-  [NEEDS CLARIFICATION: el PRD define la hora de referencia de cada operación del archivo de prueba de
-  plazo, pero no la del conjunto de evaluación (necesaria para que sus 5 traces incompletos den "no
-  concluyente") ni aclara si, para las operaciones generadas, "ahora" es el momento real en que se
-  pide el diagnóstico. ¿Qué hora de referencia usa cada grupo de operaciones?]
+  no dependen de nada más que el trace y esa hora. Cada operación del conjunto de evaluación y del
+  archivo de prueba de plazo DEBE traer su propia hora de referencia fija en los datos, de modo que
+  las 5 operaciones con trace incompleto del conjunto de evaluación tengan su último evento más de 10
+  minutos anterior a ella. Para las operaciones generadas, la hora de referencia es el momento en que
+  el analista pide el diagnóstico; ese momento se toma fuera de las reglas y se les pasa como dato.
 - **FR-027** (RNF-04): El diagnóstico DEBE ser determinista: pedir el diagnóstico de la misma
   operación varias veces DEBE dar siempre la misma causa, los mismos eventos citados y la misma
   recomendación. No se usa ninguna fuente aleatoria ni modelo de IA para diagnosticar.
@@ -307,7 +318,8 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
   y horarios estables.
 - **Archivo de prueba de plazo**: 2 operaciones pendientes fijas, aparte del conjunto de evaluación,
   usadas solo para verificar el límite del plazo de espera.
-- **Hora de referencia**: el "ahora" contra el que se mide el plazo de espera.
+- **Hora de referencia**: el "ahora" contra el que se mide el plazo de espera. Fija y propia de cada
+  operación en los datos fijos; para las operaciones generadas, el momento del pedido de diagnóstico.
 
 ## Success Criteria *(mandatory)*
 
@@ -344,7 +356,7 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
   agotan los IDs generables.
 - Los textos que ve el analista ("Operación no encontrada", "Ingresá un ID con formato OP-0000", "La
   operación sigue en curso", "La operación no tiene un fallo para investigar", "no concluyente" y las
-  recomendaciones) son los del PRD, literales.
+  recomendaciones) son los del PRD, literales, salvo los que se definen en Clarifications.
 - Para los casos de timeout, "con reversa" y "sin reversa" se distinguen solo por la presencia de la
   reversa del débito en el trace, porque las reglas no conocen el caso (PRD §1, término "Caso").
 - Un agente de IA para traces que no encajen en ninguna regla queda para después del MVP (PRD §6–§7).
