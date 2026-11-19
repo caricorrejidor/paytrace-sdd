@@ -82,7 +82,7 @@ hallazgo debajo.
 
 - [x] CHK034 - ¿Están definidos los casos borde de búsqueda (vacío, formato inválido, válido inexistente)? [Edge Case, Spec §FR-011, §FR-012]
 - [x] CHK035 - ¿Están declarados de forma explícita los límites de alcance (sin login, sin unión de logs reales, sin reintentos, solo transferencias, sin paginación)? [Assumption, Spec §Assumptions]
-- [x] CHK036 - ¿Está documentado el agotamiento de IDs generables como fuera del volumen de la demo? [Edge Case, Assumption, Spec §Edge Cases]
+- [x] CHK036 - ¿Está definido qué pasa cuando se agotan los IDs generables (rechazo de la generación con su mensaje literal y sin crear ninguna operación)? [Edge Case, Spec §Edge Cases, §FR-032]
 
 ## Notes
 

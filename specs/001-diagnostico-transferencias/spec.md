@@ -241,8 +241,9 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
   conflicto y recomienda "Evidencia contradictoria: revisar manualmente los eventos citados"
   (constitución, principio I; AGENTS.md). El "sin eventos citados" del PRD (RF-08) aplica solo cuando
   no hay ningún evento clave. Se cubre con el archivo de casos borde.
-- **Se agotan los IDs disponibles para operaciones generadas** (no se pueden usar `OP-9xxx`): el PRD
-  no define qué pasa. Se considera fuera del volumen esperado de la demo (ver Assumptions).
+- **Se agotan los IDs disponibles para operaciones generadas** (todos los menores a `OP-9000` están
+  ocupados; no se pueden usar `OP-9xxx`): la generación se rechaza con el mensaje "No quedan IDs
+  disponibles para generar operaciones" y no se crea ninguna operación (FR-032).
 
 ## Requirements *(mandatory)*
 
@@ -285,6 +286,9 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
   operación, y sus IDs DEBEN contar como ocupados para FR-003.
 - **FR-031**: Dentro de un trace, cada evento DEBE tener un momento estrictamente posterior al del
   evento anterior; no hay dos eventos con el mismo momento.
+- **FR-032**: Si no quedan IDs disponibles para generar (todos los menores a `OP-9000` están
+  ocupados), la generación DEBE rechazarse con el mensaje "No quedan IDs disponibles para generar
+  operaciones" y NO DEBE crearse ninguna operación.
 
 **Búsqueda, lista y trace**
 
@@ -404,11 +408,11 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
 - Solo transferencias; quedan afuera tarjetas, otros medios de pago y otros casos de fallo (AM02,
   duplicados, antifraude, etc.) y los mensajes ISO 20022 completos (PRD §6).
 - La lista de operaciones no tiene paginación; el volumen esperado es el de la demo: las 25 del
-  conjunto de evaluación más las que genere el analista (PRD §6). Por eso no se define qué pasa si se
-  agotan los IDs generables.
+  conjunto de evaluación más las que genere el analista (PRD §6).
 - Los textos que ve el analista ("Operación no encontrada", "Ingresá un ID con formato OP-0000", "La
   operación sigue en curso", "La operación no tiene un fallo para investigar", "no concluyente" y las
-  recomendaciones) son los del PRD, literales, salvo los que se definen en Clarifications.
+  recomendaciones) son los del PRD, literales, salvo los que se definen en Clarifications y en
+  FR-032.
 - Para los casos de timeout, "con reversa" y "sin reversa" se distinguen solo por la presencia de la
   reversa del débito en el trace, porque las reglas no conocen el caso (PRD §1, término "Caso").
 - El estado de una operación siempre coincide con su trace (p. ej. una OK siempre tiene la
