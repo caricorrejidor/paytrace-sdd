@@ -234,6 +234,56 @@
         {"id": "OP-0020-E3", "momento": "2026-11-20T21:20:04Z", "tipo": "envio_proveedor", "emisor": "origen"},
         {"id": "OP-0020-E4", "momento": "2026-11-20T21:20:06Z", "tipo": "rechazo_timeout", "emisor": "proveedor", "codigo": "AB05"}
       ]
+    },
+    {
+      "id": "OP-0021",
+      "estado": "pendiente",
+      "caso": "trace_incompleto",
+      "hora_referencia": "2026-11-21T22:12:02Z",
+      "eventos": [
+        {"id": "OP-0021-E1", "momento": "2026-11-21T21:57:00Z", "tipo": "orden_enviada", "emisor": "origen"},
+        {"id": "OP-0021-E2", "momento": "2026-11-21T21:57:02Z", "tipo": "debito_origen", "emisor": "origen"}
+      ]
+    },
+    {
+      "id": "OP-0022",
+      "estado": "pendiente",
+      "caso": "trace_incompleto",
+      "hora_referencia": "2026-11-22T22:49:02Z",
+      "eventos": [
+        {"id": "OP-0022-E1", "momento": "2026-11-22T22:34:00Z", "tipo": "orden_enviada", "emisor": "origen"},
+        {"id": "OP-0022-E2", "momento": "2026-11-22T22:34:02Z", "tipo": "debito_origen", "emisor": "origen"}
+      ]
+    },
+    {
+      "id": "OP-0023",
+      "estado": "pendiente",
+      "caso": "trace_incompleto",
+      "hora_referencia": "2026-11-23T23:26:02Z",
+      "eventos": [
+        {"id": "OP-0023-E1", "momento": "2026-11-23T23:11:00Z", "tipo": "orden_enviada", "emisor": "origen"},
+        {"id": "OP-0023-E2", "momento": "2026-11-23T23:11:02Z", "tipo": "debito_origen", "emisor": "origen"}
+      ]
+    },
+    {
+      "id": "OP-0024",
+      "estado": "pendiente",
+      "caso": "trace_incompleto",
+      "hora_referencia": "2026-11-25T00:03:02Z",
+      "eventos": [
+        {"id": "OP-0024-E1", "momento": "2026-11-24T23:48:00Z", "tipo": "orden_enviada", "emisor": "origen"},
+        {"id": "OP-0024-E2", "momento": "2026-11-24T23:48:02Z", "tipo": "debito_origen", "emisor": "origen"}
+      ]
+    },
+    {
+      "id": "OP-0025",
+      "estado": "pendiente",
+      "caso": "trace_incompleto",
+      "hora_referencia": "2026-11-26T00:40:02Z",
+      "eventos": [
+        {"id": "OP-0025-E1", "momento": "2026-11-26T00:25:00Z", "tipo": "orden_enviada", "emisor": "origen"},
+        {"id": "OP-0025-E2", "momento": "2026-11-26T00:25:02Z", "tipo": "debito_origen", "emisor": "origen"}
+      ]
     }
   ]
 }
