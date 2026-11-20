@@ -76,7 +76,7 @@ la app FastAPI arrancando con ellos.
 
 ### Repositorio básico
 
-- [ ] T007 [P] Escribir `tests/unit/test_repositorio.py` (parte básica): `Repositorio(operaciones)` permite `obtener(id)` (devuelve la operación o `None`) y `cantidad()`; `agregar(op)` suma una operación y lanza `ValueError` si el ID ya existe, sin modificar el contenido; el constructor lanza `ValueError` con IDs repetidos. **Terminada cuando**: se ve fallar por `ImportError` de `app.almacen.repositorio`.
+- [X] T007 [P] Escribir `tests/unit/test_repositorio.py` (parte básica): `Repositorio(operaciones)` permite `obtener(id)` (devuelve la operación o `None`) y `cantidad()`; `agregar(op)` suma una operación y lanza `ValueError` si el ID ya existe, sin modificar el contenido; el constructor lanza `ValueError` con IDs repetidos. **Terminada cuando**: se ve fallar por `ImportError` de `app.almacen.repositorio`.
 - [ ] T008 Implementar en `app/almacen/repositorio.py` la clase `Repositorio` con un `dict[str, Operacion]` y los métodos `obtener`, `cantidad` y `agregar` (sin `siguiente_id` ni `listar`, que llegan en US4 y US5). Depende de T006. **Terminada cuando**: `uv run pytest tests/unit/test_repositorio.py` pasa.
 
 ### Carga y validación de datos fijos
