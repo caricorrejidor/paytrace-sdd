@@ -56,7 +56,7 @@ por separado.
 **Propósito**: proyecto uv instalable y estructura de paquetes vacía.
 
 - [X] T001 Crear `pyproject.toml` (nombre `paytrace`, `requires-python = ">=3.12,<3.13"`, sección `[tool.pytest.ini_options]` con `pythonpath = ["."]` y `testpaths = ["tests"]`) y `.python-version` con `3.12`. **Terminada cuando**: `uv sync` termina sin error y `uv run python --version` muestra 3.12.
-- [ ] T002 Agregar dependencias con uv en `pyproject.toml` y `uv.lock`: `uv add fastapi==0.165.0 uvicorn==0.54.0` y `uv add --dev pytest==9.2.0 httpx==0.28.1` (research R1). Depende de T001. **Terminada cuando**: `uv.lock` existe, fija esas versiones y `uv run python -c "import fastapi, uvicorn, pytest, httpx"` no da error.
+- [X] T002 Agregar dependencias con uv en `pyproject.toml` y `uv.lock`: `uv add fastapi==0.165.0 uvicorn==0.54.0` y `uv add --dev pytest==9.2.0 httpx==0.28.1` (research R1). Depende de T001. **Terminada cuando**: `uv.lock` existe, fija esas versiones y `uv run python -c "import fastapi, uvicorn, pytest, httpx"` no da error.
 - [ ] T003 [P] Crear los paquetes vacíos `app/__init__.py`, `app/diagnostico/__init__.py`, `app/simulacion/__init__.py`, `app/almacen/__init__.py`, `app/api/__init__.py` y los directorios `app/datos/`, `tests/unit/`, `tests/api/`. **Terminada cuando**: `uv run python -c "import app.diagnostico, app.simulacion, app.almacen, app.api"` no da error y `uv run pytest` termina con "no tests ran" (código 5).
 - [ ] T004 [P] Crear `.gitignore` con `.venv/`, `__pycache__/`, `.pytest_cache/`. **Terminada cuando**: después de `uv run pytest`, `git status` no muestra ninguno de esos directorios.
 
