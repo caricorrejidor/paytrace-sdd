@@ -158,3 +158,131 @@ def test_regla_1_rechaza_id_de_operacion_invalido(tmp_path, id_invalido):
     mensaje = str(error.value)
     assert "roto.json" in mensaje
     assert id_invalido.strip() in mensaje
+
+
+# --- cargar_datos_fijos: los tres archivos juntos (reglas 2 y 8) -------------
+
+# Import del módulo (no de la función) para que los tests de cargar_archivo puedan pasar antes
+# de que exista cargar_datos_fijos (T011 antes que T012).
+from app.almacen import carga  # noqa: E402
+
+CASOS_EVALUACION = [
+    "fondos_insuficientes",
+    "cuenta_incorrecta",
+    "timeout_con_reversa",
+    "timeout_sin_reversa",
+    "trace_incompleto",
+]
+
+
+def _con_caso(id_operacion: str, caso: str | None) -> dict:
+    datos = _operacion_valida(id_operacion)
+    if caso is None:
+        del datos["caso"]
+    else:
+        datos["caso"] = caso
+    return datos
+
+
+def _evaluacion() -> list[dict]:
+    return [
+        _con_caso(f"OP-{numero:04d}", CASOS_EVALUACION[(numero - 1) // 5])
+        for numero in range(1, 26)
+    ]
+
+
+def _plazo() -> list[dict]:
+    return [_con_caso("OP-0026", None), _con_caso("OP-0027", None)]
+
+
+def _borde() -> list[dict]:
+    return [_con_caso(f"OP-{numero:04d}", None) for numero in (28, 29, 30)]
+
+
+def _directorio(tmp_path: Path, evaluacion=None, plazo=None, borde=None) -> Path:
+    _escribir(tmp_path, _evaluacion() if evaluacion is None else evaluacion, "conjunto_evaluacion.json")
+    _escribir(tmp_path, _plazo() if plazo is None else plazo, "prueba_plazo.json")
+    _escribir(tmp_path, _borde() if borde is None else borde, "casos_borde.json")
+    return tmp_path
+
+
+def test_cargar_datos_fijos_devuelve_las_operaciones_de_los_tres_archivos(tmp_path):
+    operaciones = carga.cargar_datos_fijos(_directorio(tmp_path))
+
+    assert sorted(op.id for op in operaciones) == [f"OP-{n:04d}" for n in range(1, 31)]
+
+
+@pytest.mark.parametrize(
+    "archivo", ["conjunto_evaluacion.json", "prueba_plazo.json", "casos_borde.json"]
+)
+def test_rechaza_si_falta_un_archivo(tmp_path, archivo):
+    directorio = _directorio(tmp_path)
+    (directorio / archivo).unlink()
+
+    with pytest.raises(ErrorDatosFijos):
+        carga.cargar_datos_fijos(directorio)
+
+
+def test_regla_2_id_de_operacion_repetido_dentro_de_un_archivo(tmp_path):
+    borde = _borde()
+    borde[1] = _con_caso("OP-0028", None)
+
+    with pytest.raises(ErrorDatosFijos):
+        carga.cargar_datos_fijos(_directorio(tmp_path, borde=borde))
+
+
+def test_regla_2_id_de_operacion_repetido_entre_archivos(tmp_path):
+    plazo = _plazo()
+    plazo[0] = _con_caso("OP-0028", None)
+
+    with pytest.raises(ErrorDatosFijos):
+        carga.cargar_datos_fijos(_directorio(tmp_path, plazo=plazo))
+
+
+def test_regla_2_id_de_evento_repetido_dentro_de_un_archivo(tmp_path):
+    borde = _borde()
+    borde[1]["eventos"][0]["id"] = "OP-0028-E1"
+
+    with pytest.raises(ErrorDatosFijos):
+        carga.cargar_datos_fijos(_directorio(tmp_path, borde=borde))
+
+
+def test_regla_2_id_de_evento_repetido_entre_archivos(tmp_path):
+    plazo = _plazo()
+    plazo[0]["eventos"][0]["id"] = "OP-0028-E1"
+
+    with pytest.raises(ErrorDatosFijos):
+        carga.cargar_datos_fijos(_directorio(tmp_path, plazo=plazo))
+
+
+def test_regla_8_evaluacion_con_cantidad_distinta_de_25(tmp_path):
+    with pytest.raises(ErrorDatosFijos):
+        carga.cargar_datos_fijos(_directorio(tmp_path, evaluacion=_evaluacion()[:24]))
+
+
+def test_regla_8_prueba_de_plazo_con_cantidad_distinta_de_2(tmp_path):
+    plazo = _plazo() + [_con_caso("OP-0031", None)]
+
+    with pytest.raises(ErrorDatosFijos):
+        carga.cargar_datos_fijos(_directorio(tmp_path, plazo=plazo))
+
+
+def test_regla_8_casos_borde_con_cantidad_distinta_de_3(tmp_path):
+    with pytest.raises(ErrorDatosFijos):
+        carga.cargar_datos_fijos(_directorio(tmp_path, borde=_borde()[:2]))
+
+
+def test_regla_8_evaluacion_con_una_operacion_ok(tmp_path):
+    evaluacion = _evaluacion()
+    evaluacion[0]["caso"] = "ok"
+
+    with pytest.raises(ErrorDatosFijos):
+        carga.cargar_datos_fijos(_directorio(tmp_path, evaluacion=evaluacion))
+
+
+def test_regla_8_evaluacion_con_una_operacion_sin_caso(tmp_path):
+    evaluacion = _evaluacion()
+    del evaluacion[0]["caso"]
+
+    with pytest.raises(ErrorDatosFijos):
+        carga.cargar_datos_fijos(_directorio(tmp_path, evaluacion=evaluacion))
