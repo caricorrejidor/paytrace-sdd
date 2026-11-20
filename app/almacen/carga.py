@@ -125,3 +125,51 @@ def cargar_archivo(ruta: Path) -> list[Operacion]:
                 f"{nombre}: operación {crudo.get('id', '<sin id>')}: {error}"
             ) from error
     return operaciones
+
+
+ARCHIVO_EVALUACION = "conjunto_evaluacion.json"
+ARCHIVO_PLAZO = "prueba_plazo.json"
+ARCHIVO_BORDE = "casos_borde.json"
+
+# Regla 8: cantidades del spec (FR-007, FR-008, FR-029).
+CANTIDADES = {ARCHIVO_EVALUACION: 25, ARCHIVO_PLAZO: 2, ARCHIVO_BORDE: 3}
+POR_CASO_EN_EVALUACION = 5
+CASOS_EN_EVALUACION = frozenset(Caso) - {Caso.OK}
+
+
+def cargar_datos_fijos(directorio: Path) -> list[Operacion]:
+    """Carga los tres archivos fijos y valida las reglas entre archivos (2 y 8)."""
+    por_archivo = {nombre: cargar_archivo(Path(directorio) / nombre) for nombre in CANTIDADES}
+
+    for nombre, operaciones in por_archivo.items():
+        if len(operaciones) != CANTIDADES[nombre]:
+            raise ErrorDatosFijos(
+                f"{nombre}: tiene {len(operaciones)} operaciones y deben ser {CANTIDADES[nombre]}"
+            )
+
+    for caso in CASOS_EN_EVALUACION:
+        cantidad = sum(op.caso is caso for op in por_archivo[ARCHIVO_EVALUACION])
+        if cantidad != POR_CASO_EN_EVALUACION:
+            raise ErrorDatosFijos(
+                f"{ARCHIVO_EVALUACION}: tiene {cantidad} operaciones del caso {caso} y deben ser "
+                f"{POR_CASO_EN_EVALUACION} (sin OK y todas con caso)"
+            )
+
+    ids_operacion: dict[str, str] = {}
+    ids_evento: dict[str, str] = {}
+    for nombre, operaciones in por_archivo.items():
+        for op in operaciones:
+            if op.id in ids_operacion:
+                raise ErrorDatosFijos(
+                    f"{nombre}: operación {op.id}: ID repetido (ya está en {ids_operacion[op.id]})"
+                )
+            ids_operacion[op.id] = nombre
+            for evento in op.eventos:
+                if evento.id in ids_evento:
+                    raise ErrorDatosFijos(
+                        f"{nombre}: operación {op.id}: ID de evento {evento.id} repetido "
+                        f"(ya está en {ids_evento[evento.id]})"
+                    )
+                ids_evento[evento.id] = nombre
+
+    return [op for operaciones in por_archivo.values() for op in operaciones]
