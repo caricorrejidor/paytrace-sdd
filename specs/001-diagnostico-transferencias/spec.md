@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Approved
 
 **Input**: User description: "Generá el spec a partir del PRD en PRD.md. Escribilo en español. No incluyas stack, frameworks ni decisiones técnicas. No inventes: donde el PRD no decida algo, dejá un marcador [NEEDS CLARIFICATION]. No commitees."
 
@@ -67,8 +67,8 @@ Los códigos de motivo siguen ISO 20022 y el MVP usa solo tres: AM04 (fondos ins
 - Q: ¿Qué IDs están prohibidos? → A: Ninguna operación, fija o generada, usa un ID `OP-9xxx`.
 - Q: ¿Cómo se ordenan dos eventos con el mismo momento? → A: No pueden existir: dentro de un trace, cada evento tiene un momento estrictamente posterior al anterior.
 - Q: ¿Qué es "siguiente ID libre"? → A: El número siguiente al mayor ID existente.
-- Q: ¿De dónde sale la operación OK de la prueba independiente de la historia 2? → A: Se genera con la historia 4, porque el conjunto de evaluación no tiene operaciones OK.
-- Q: ¿Cuántas mediciones cuentan para SC-005 y SC-006? → A: 5 por cada una de las 25 operaciones del conjunto de evaluación (125 en total), desde el pedido del analista hasta que ve el resultado completo.
+- Q: ¿De dónde sale la operación OK de la prueba independiente de la historia 2? → A: Se carga directamente para la prueba (ajustado al plan de tareas), porque el conjunto de evaluación no tiene operaciones OK y la historia 2 no depende de la 4; con la historia 4 se suma la prueba de punta a punta con una OK generada.
+- Q: ¿Cuántas mediciones cuentan para SC-005 y SC-006? → A: 5 por cada una de las 25 operaciones del conjunto de evaluación (125 en total). Ajustado: se mide el tiempo del servidor, desde que recibe el pedido hasta que termina de responder (ver SC-005 y SC-006).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -113,8 +113,8 @@ dentro del plazo; "La operación no tiene un fallo para investigar" si la operac
 (principio I). Un diagnóstico inventado es peor que ninguno (OBJ-3).
 
 **Independent Test**: pedir el diagnóstico de las 5 operaciones con trace incompleto del conjunto de
-evaluación, de una operación OK generada con la historia 4 (el conjunto de evaluación no tiene
-operaciones OK), de las 2 operaciones del archivo de prueba de plazo y de las 3 del archivo de casos
+evaluación, de una operación OK cargada directamente para la prueba (el conjunto de evaluación no
+tiene operaciones OK; con la historia 4 se prueba además con una OK generada), de las 2 operaciones del archivo de prueba de plazo y de las 3 del archivo de casos
 borde, y verificar las respuestas sin causa.
 
 **Acceptance Scenarios** (AC-08, AC-09, AC-10, AC-12, AC-15; los escenarios 5 a 7 no tienen AC en
@@ -207,8 +207,8 @@ e ID asignado.
 
 ### Historia de usuario 5 - Ver la lista de operaciones con su estado (Priority: P2)
 
-El analista ve todas las operaciones (las del conjunto de evaluación y las que generó) con su estado
-y puede elegir una para investigarla, sin tener que tipear el ID.
+El analista ve todas las operaciones (los datos fijos y las que generó) con su estado y toma de ahí
+el ID de la que quiere investigar, sin tener que conocerlo de antemano.
 
 **Why this priority**: el PRD lo marca como deseable (RF-02); la búsqueda por ID ya cubre el acceso.
 
@@ -229,8 +229,8 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
 - **ID con formato válido que no existe** (p. ej. `OP-9999`): responde "Operación no encontrada".
 - **Pendiente con exactamente 10 minutos sin eventos**: sigue en curso; el plazo vence recién con
   más de 10 minutos.
-- **Pedir el diagnóstico varias veces**: la misma operación da siempre el mismo resultado (misma
-  causa, mismos eventos citados, misma recomendación).
+- **Pedir el diagnóstico varias veces**: la misma operación, con la misma hora de referencia, da
+  siempre el mismo resultado (misma causa, mismos eventos citados, misma recomendación).
 - **Operación fallida sin ningún evento clave** (su trace no encaja en ninguna regla): la respuesta es
   "no concluyente" enseguida, sin esperar el plazo (que aplica solo a pendientes), sin causa y sin
   eventos citados (constitución, principio I). La recomendación es la misma que la del caso trace
@@ -241,8 +241,8 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
   conflicto y recomienda "Evidencia contradictoria: revisar manualmente los eventos citados"
   (constitución, principio I; AGENTS.md). El "sin eventos citados" del PRD (RF-08) aplica solo cuando
   no hay ningún evento clave. Se cubre con el archivo de casos borde.
-- **Se agotan los IDs disponibles para operaciones generadas** (todos los menores a `OP-9000` están
-  ocupados; no se pueden usar `OP-9xxx`): la generación se rechaza con el mensaje "No quedan IDs
+- **Se agotan los IDs disponibles para operaciones generadas** (el mayor ID existente es `OP-8999`,
+  así que el siguiente sería `OP-9000`; no se pueden usar `OP-9xxx` ni se reusan huecos): la generación se rechaza con el mensaje "No quedan IDs
   disponibles para generar operaciones" y no se crea ninguna operación (FR-032).
 
 ## Requirements *(mandatory)*
@@ -286,8 +286,8 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
   operación, y sus IDs DEBEN contar como ocupados para FR-003.
 - **FR-031**: Dentro de un trace, cada evento DEBE tener un momento estrictamente posterior al del
   evento anterior; no hay dos eventos con el mismo momento.
-- **FR-032**: Si no quedan IDs disponibles para generar (todos los menores a `OP-9000` están
-  ocupados), la generación DEBE rechazarse con el mensaje "No quedan IDs disponibles para generar
+- **FR-032**: Si no quedan IDs disponibles para generar (el mayor ID existente es `OP-8999`, así que
+  el siguiente según FR-003 sería `OP-9000`), la generación DEBE rechazarse con el mensaje "No quedan IDs disponibles para generar
   operaciones" y NO DEBE crearse ninguna operación.
 
 **Búsqueda, lista y trace**
@@ -341,7 +341,7 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
   minutos anterior a ella. Para las operaciones generadas, la hora de referencia es el momento en que
   el analista pide el diagnóstico; ese momento se toma fuera de las reglas y se les pasa como dato.
 - **FR-027** (RNF-04): El diagnóstico DEBE ser determinista: pedir el diagnóstico de la misma
-  operación varias veces DEBE dar siempre la misma causa, los mismos eventos citados y la misma
+  operación varias veces, con la misma hora de referencia, DEBE dar siempre la misma causa, los mismos eventos citados y la misma
   recomendación. No se usa ninguna fuente aleatoria ni modelo de IA para diagnosticar.
 
 **Datos simulados**
@@ -381,7 +381,8 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
 
 - **SC-001** (OBJ-1): La mediana del tiempo de investigación es **≤ 5 minutos** por caso, medida
   sobre 10 operaciones del conjunto de evaluación cronometradas por una persona que no las generó,
-  desde que busca el ID hasta que tiene el diagnóstico (hoy ~20 min, estimación de referencia).
+  usando la documentación interactiva de la API (`/docs`), desde que busca el ID hasta que tiene el
+  diagnóstico (hoy ~20 min, estimación de referencia).
 - **SC-002** (OBJ-2): El **100 %** de los diagnósticos con causa de las 20 operaciones con trace
   completo del conjunto de evaluación cita exactamente un evento: el evento clave de su caso.
 - **SC-003** (OBJ-3): El **100 %** de las 5 operaciones con trace incompleto del conjunto de
@@ -389,11 +390,12 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
 - **SC-004** (OBJ-4): El **100 %** de las 20 operaciones con trace completo del conjunto de
   evaluación recibe la causa que corresponde a su caso.
 - **SC-005** (RNF-01): El diagnóstico se muestra en **≤ 2 segundos** en al menos el 95 % de 125
-  mediciones (5 por cada operación del conjunto de evaluación), cada una desde que el analista pide
-  el diagnóstico hasta que ve el resultado completo.
+  mediciones (5 por cada operación del conjunto de evaluación), cada una medida como tiempo del
+  servidor: desde que recibe el pedido de diagnóstico hasta que termina de responder.
 - **SC-006** (RNF-02): El trace de una operación se muestra en **≤ 2 segundos** en al menos el 95 %
-  de 125 mediciones (5 por cada operación del conjunto de evaluación), cada una desde que el analista
-  abre la operación hasta que ve todos sus eventos.
+  de 125 mediciones (5 por cada operación del conjunto de evaluación), cada una medida como tiempo del
+  servidor: desde que recibe el pedido de la operación hasta que termina de responder con todos sus
+  eventos.
 - **SC-007** (RNF-04): Pedir **5 veces** el diagnóstico de cada operación del conjunto de evaluación
   da el mismo resultado las 5 veces en el **100 %** de las operaciones.
 - **SC-008** (RNF-03): **0** datos personales reales en todo el sistema.
@@ -403,18 +405,21 @@ y puede elegir una para investigarla, sin tener que tipear el ID.
 
 - Hay un solo tipo de usuario (el analista); no hay login, roles ni permisos, y todos los analistas
   ven todas las operaciones (PRD §6).
+- La interfaz del analista es la API, que usa desde su documentación interactiva (`/docs`); el MVP
+  no tiene pantallas propias. Donde el spec dice "el sistema muestra", es lo que devuelve la API.
 - El trace ya llega unido: el MVP no une logs reales de varios sistemas (PRD §6).
 - PayTrace solo diagnostica: no corrige ni reintenta operaciones (PRD §6).
 - Solo transferencias; quedan afuera tarjetas, otros medios de pago y otros casos de fallo (AM02,
   duplicados, antifraude, etc.) y los mensajes ISO 20022 completos (PRD §6).
-- La lista de operaciones no tiene paginación; el volumen esperado es el de la demo: las 25 del
-  conjunto de evaluación más las que genere el analista (PRD §6).
+- La lista de operaciones no tiene paginación; el volumen esperado es el de la demo: las 30
+  operaciones fijas (conjunto de evaluación, archivo de prueba de plazo y archivo de casos borde) más
+  las que genere el analista (PRD §6).
 - Los textos que ve el analista ("Operación no encontrada", "Ingresá un ID con formato OP-0000", "La
   operación sigue en curso", "La operación no tiene un fallo para investigar", "no concluyente" y las
   recomendaciones) son los del PRD, literales, salvo los que se definen en Clarifications y en
   FR-032.
 - Para los casos de timeout, "con reversa" y "sin reversa" se distinguen solo por la presencia de la
-  reversa del débito en el trace, porque las reglas no conocen el caso (PRD §1, término "Caso").
+  reversa del débito posterior al rechazo en el trace, porque las reglas no conocen el caso (PRD §1, término "Caso").
 - El estado de una operación siempre coincide con su trace (p. ej. una OK siempre tiene la
   acreditación en destino), porque todos los datos son simulados. No se define qué pasa si no
   coinciden.

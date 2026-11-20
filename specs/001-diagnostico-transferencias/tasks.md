@@ -18,6 +18,10 @@ implementación que cubre, y termina cuando el test corre y falla por la razón 
 inexistente, assert, 404 de una ruta que todavía no existe). Un test nunca se modifica para que
 pase (principio III).
 
+**Excepción explícita**: T054 (tiempos) y T055 (sin conexiones externas, azar ni LLM) no siguen el
+orden rojo→verde. Son verificaciones transversales sobre la app ya construida, no lógica de
+diagnóstico: se escriben al final y terminan cuando pasan.
+
 **Organización**: por historia de usuario del spec, para que cada una se implemente y se pruebe
 por separado.
 
@@ -36,8 +40,14 @@ por separado.
   docstring el Dado/Cuando/Entonces del spec (research R11).
 - Los tests comparan contra los **textos literales** del spec escritos en el propio test, nunca
   contra las constantes de `app/diagnostico/textos.py` (si no, el test sería tautológico).
-- Desvío menor del plan: las fixtures de API van en `tests/api/conftest.py` (no en
-  `tests/conftest.py`) para que los tests unitarios no importen `app.main` antes de que exista.
+- Las fixtures de API van en `tests/api/conftest.py` (no en `tests/conftest.py`) para que los tests
+  unitarios no importen `app.main` antes de que exista.
+- Durante `/speckit-implement`, cada tarea se commitea al terminar con el skill `conventional-commit`,
+  **sin esperar OK** por commit. Las tareas de test se commitean cuando el test **se ve fallar**
+  (commit en rojo, tipo `test`), antes de la implementación que lo pone en verde. Ese commit es la
+  referencia contra la que T056 verifica que el test no cambió.
+- Al terminar cada fase, la implementación **se frena** y muestra el `git log` de los commits de la
+  fase y el resultado de `uv run pytest` para revisión; la fase siguiente empieza recién con el OK.
 
 ---
 
@@ -78,18 +88,18 @@ la app FastAPI arrancando con ellos.
 
 ### Archivos de datos fijos (30 operaciones)
 
-- [ ] T013 [P] Escribir `tests/unit/test_datos_fijos.py` sobre los archivos reales de `app/datos/`, con tests **separados por archivo y por caso** (usan `cargar_archivo`, para que cada tarea de datos pueda verse en verde por su cuenta): (a) evaluación: IDs `OP-0001` a `OP-0025` en los rangos de contracts/datos-fijos.md, cada operación con el estado y la secuencia exacta de tipos y códigos de su caso en la tabla del spec, IDs de evento `{op}-E{n}` desde 1, hora de referencia posterior al último evento en las fallidas y **más de 10 min** posterior en las 5 de trace incompleto, y momentos distintos entre operaciones (no son copias); (b) plazo: `OP-0026` y `OP-0027` pendientes, orden enviada → débito en origen, último evento exactamente 2 min y exactamente 10 min antes de su hora de referencia; (c) casos borde: `OP-0028` a `OP-0030` fallidas con las secuencias de FR-029; (d) los JSON solo usan las claves del contrato (`operaciones`, `id`, `estado`, `caso`, `hora_referencia`, `eventos`, `momento`, `tipo`, `emisor`, `codigo`), sin datos personales (FR-028, SC-008); (e) `cargar_datos_fijos(Path("app/datos"))` devuelve 30 operaciones `OP-0001` a `OP-0030`. **Terminada cuando**: se ve fallar porque los archivos no existen.
+- [ ] T013 Escribir `tests/unit/test_datos_fijos.py` sobre los archivos reales de `app/datos/`, con tests **separados por archivo y por caso** (usan `cargar_archivo`, para que cada tarea de datos pueda verse en verde por su cuenta): (a) evaluación: IDs `OP-0001` a `OP-0025` en los rangos de contracts/datos-fijos.md, cada operación con el estado y la secuencia exacta de tipos y códigos de su caso en la tabla del spec, IDs de evento `{op}-E{n}` desde 1, hora de referencia posterior al último evento en las fallidas y **más de 10 min** posterior en las 5 de trace incompleto, y momentos distintos entre operaciones (no son copias); (b) plazo: `OP-0026` y `OP-0027` pendientes, sin `caso`, IDs de evento `{op}-E{n}` desde 1, orden enviada → débito en origen, último evento exactamente 2 min y exactamente 10 min antes de su hora de referencia; (c) casos borde: `OP-0028` a `OP-0030` fallidas, sin `caso`, IDs de evento `{op}-E{n}` desde 1, con las secuencias de FR-029; (d) los JSON solo usan las claves del contrato (`operaciones`, `id`, `estado`, `caso`, `hora_referencia`, `eventos`, `momento`, `tipo`, `emisor`, `codigo`), sin datos personales (FR-028, SC-008); (e) `cargar_datos_fijos(Path("app/datos"))` devuelve 30 operaciones `OP-0001` a `OP-0030`. Depende de T012 (usa `cargar_archivo` y `cargar_datos_fijos`). **Terminada cuando**: se ve fallar porque los archivos no existen.
 - [ ] T014 Escribir en `app/datos/conjunto_evaluacion.json` las operaciones `OP-0001` a `OP-0010`: 5 `fondos_insuficientes` (orden enviada → rechazo en origen AM04, clave en `E2`) y 5 `cuenta_incorrecta` (orden enviada → débito en origen → rechazo banco destino AC01 → reversa del débito, clave en `E3`), estado `fallida`, horarios distintos entre operaciones. Depende de T013. **Terminada cuando**: pasan los tests de T013 para esos dos casos.
 - [ ] T015 Agregar en `app/datos/conjunto_evaluacion.json` las operaciones `OP-0011` a `OP-0020`: 5 `timeout_con_reversa` (orden → débito → envío al proveedor → rechazo timeout AB05 → reversa) y 5 `timeout_sin_reversa` (orden → débito → envío al proveedor → rechazo timeout AB05), clave en `E4`, estado `fallida`. Depende de T014 (mismo archivo). **Terminada cuando**: pasan los tests de T013 para esos dos casos.
 - [ ] T016 Agregar en `app/datos/conjunto_evaluacion.json` las operaciones `OP-0021` a `OP-0025`: `trace_incompleto`, estado `pendiente`, orden enviada → débito en origen, hora de referencia 15 min después del último evento. Depende de T015 (mismo archivo). **Terminada cuando**: pasan todos los tests de T013 sobre el conjunto de evaluación (25 operaciones).
-- [ ] T017 [P] Escribir `app/datos/prueba_plazo.json` con `OP-0026` (último evento 2 min antes de su hora de referencia) y `OP-0027` (exactamente 10 min antes), según contracts/datos-fijos.md. Depende de T013. **Terminada cuando**: pasan los tests de T013 sobre prueba de plazo.
+- [ ] T017 [P] Escribir `app/datos/prueba_plazo.json` con `OP-0026` (último evento 2 min antes de su hora de referencia) y `OP-0027` (exactamente 10 min antes), ambas `pendiente` y sin `caso`, según contracts/datos-fijos.md. Depende de T013. **Terminada cuando**: pasan los tests de T013 sobre prueba de plazo.
 - [ ] T018 [P] Escribir `app/datos/casos_borde.json` con `OP-0028` (orden → débito → reversa), `OP-0029` (orden → débito → rechazo banco destino AC01 en `E3` → rechazo timeout AB05 en `E4` → reversa) y `OP-0030` (orden → débito → envío al proveedor → rechazo timeout AB05 en `E4` → rechazo timeout AB05 en `E5`), todas `fallida`, sin `caso`. Depende de T013. **Terminada cuando**: pasan los tests de T013 sobre casos borde y, con T016 y T017 hechas, `uv run pytest tests/unit/test_datos_fijos.py` pasa completo.
 
 ### Dependencias de la API y arranque
 
 - [ ] T019 [P] Escribir `tests/unit/test_dependencias.py`: `operacion_o_error(texto, repositorio)` devuelve la operación si existe; lanza `ErrorPayTrace(400, "Ingresá un ID con formato OP-0000")` con `None`, `""`, `"op1"`, `"op-0001"` y `" OP-0001"`, sin consultar el repositorio (un repositorio falso que falla si se lo llama); lanza `ErrorPayTrace(404, "Operación no encontrada")` con `"OP-9999"`. `obtener_reloj()` devuelve un callable que da un `datetime` con zona UTC. **Terminada cuando**: se ve fallar por `ImportError` de `app.api.dependencias`.
 - [ ] T020 Implementar `app/api/dependencias.py`: excepción `ErrorPayTrace(status, detalle)`, `operacion_o_error(texto, repositorio)` (usa `es_id_valido`), `obtener_repositorio(request)` (devuelve `request.app.state.repositorio`) y `obtener_reloj()` (devuelve `lambda: datetime.now(UTC)`; es el **único** lugar de la app que lee el reloj). Depende de T006, T008 y T019. **Terminada cuando**: `uv run pytest tests/unit/test_dependencias.py` pasa.
-- [ ] T021 [P] Escribir `tests/api/conftest.py`: constante `HORA_FIJA = datetime(2026, 11, 19, 12, 0, tzinfo=UTC)`; fixture `reloj` (objeto con atributo `ahora`, inicializado en `HORA_FIJA`, que cada test puede cambiar); fixture `cliente` que importa `app.main` dentro de la fixture, sobrescribe `obtener_reloj` con `app.dependency_overrides` para que devuelva `reloj.ahora`, abre `TestClient(app)` como context manager (corre el lifespan: repositorio fresco por test) y limpia los overrides al salir; fixture `repositorio` que devuelve `cliente.app.state.repositorio`. **Terminada cuando**: el archivo existe y `uv run pytest tests/api` no da errores propios del conftest (sin tests todavía).
+- [ ] T021 [P] Escribir `tests/api/conftest.py`: constante `HORA_FIJA = datetime(2026, 11, 19, 12, 0, tzinfo=UTC)`; fixture `reloj` (objeto con atributo `ahora`, inicializado en `HORA_FIJA`, que cada test puede cambiar); fixture `cliente` que importa `app.main` dentro de la fixture, sobrescribe `obtener_reloj` con `app.dependency_overrides` para que devuelva una función que da la hora del reloj falso (`lambda: reloj.ahora`, leída en cada llamada; así `reloj()` en las rutas funciona igual que con el reloj real), abre `TestClient(app)` como context manager (corre el lifespan: repositorio fresco por test) y limpia los overrides al salir; fixture `repositorio` que devuelve `cliente.app.state.repositorio`. **Terminada cuando**: el archivo existe y `uv run pytest tests/api` no da errores propios del conftest (sin tests todavía).
 - [ ] T022 Escribir `tests/api/test_arranque.py`: al arrancar, `repositorio.cantidad() == 30` y existen `OP-0001` a `OP-0030`; FR-009: agregar una operación `origen="generada"` con `repositorio.agregar`, cerrar el cliente, abrir uno nuevo y verificar que vuelven a ser 30 y que la agregada no está. Depende de T021. **Terminada cuando**: se ve fallar por `ImportError` de `app.main`.
 - [ ] T023 Implementar `app/main.py` y `app/api/rutas.py` (este último solo con un `APIRouter` vacío): `FastAPI` con `lifespan` que crea `Repositorio(cargar_datos_fijos(<ruta de app/datos>))` en `app.state.repositorio` (si la carga falla, la app no arranca), handler de `ErrorPayTrace` que responde `{"detalle": ...}` con su status, e `include_router` del router. Depende de T012, T016–T018, T020 y T022. **Terminada cuando**: `uv run pytest tests/api/test_arranque.py` pasa y `uv run uvicorn app.main:app` arranca sin error.
 
@@ -111,7 +121,7 @@ recomendación contra la tabla de casos.
 - [ ] T024 [P] [US1] Escribir `tests/unit/test_reglas_aislamiento.py` (research R2): (a) en `app/diagnostico/` existen `__init__.py`, `reglas.py`, `resultados.py` y `textos.py` (así el test no pasa vacío antes de implementar); (b) recorriendo el AST de cada archivo, falla si hay imports de `fastapi`, `pydantic`, `random`, `secrets`, `time`, `app.api`, `app.almacen` o `app.simulacion`; llamadas a `now`, `utcnow` o `today`; o identificadores (nombres, atributos, argumentos, alias de import) `Caso` o `caso`. No mira docstrings ni comentarios. **Terminada cuando**: se ve fallar porque faltan `reglas.py`, `resultados.py` y `textos.py`.
 - [ ] T025 [P] [US1] Escribir en `tests/unit/test_reglas.py` (con un helper local para armar eventos) los tests de causa nombrada de `diagnosticar(estado, eventos, hora_referencia)`, todos con estado `fallida`: AM04 en `rechazo_origen` → `Diagnostico("fondos insuficientes", (id del rechazo,), "Avisar al cliente que no tenía saldo. No se debitó nada")`; AC01 en `rechazo_banco_destino` → "cuenta incorrecta" con su recomendación; AB05 en `rechazo_timeout` con `reversa_debito` **posterior** → "timeout", "El débito ya se devolvió: se puede reintentar la transferencia"; AB05 sin reversa → "timeout", "El débito todavía no se devolvió: pedir la reversa antes de reintentar. Si se reintenta antes, se cobra dos veces"; AB05 con `reversa_debito` **anterior** al rechazo → recomendación "sin reversa" (FR-020); el resultado de una fallida no cambia con dos horas de referencia distintas; 5 llamadas con la misma entrada dan resultados iguales (FR-027). **Terminada cuando**: se ve fallar por `ImportError` de `app.diagnostico`.
 - [ ] T026 [P] [US1] Escribir `tests/api/test_h1_diagnostico_con_evidencia.py`: `test_h1_e1` a `test_h1_e4` con `OP-0001` (cita `["OP-0001-E2"]`), `OP-0006` (`["OP-0006-E3"]`), `OP-0011` y `OP-0016` (`["OP-00xx-E4"]`): status 200, cuerpo con claves exactamente `{tipo, causa, eventos_citados, recomendacion}`, `tipo == "diagnostico"`, causa y recomendación literales del spec; errores comunes: `/operaciones/op1/diagnostico` → 400 `{"detalle": "Ingresá un ID con formato OP-0000"}` y `/operaciones/OP-9999/diagnostico` → 404 `{"detalle": "Operación no encontrada"}`. **Terminada cuando**: se ve fallar (404 de ruta inexistente).
-- [ ] T027 [P] [US1] Escribir `tests/api/test_conjunto_evaluacion.py` (parte SC-002/SC-004): parametrizado sobre `OP-0001` a `OP-0020`, toma el `caso` de la operación desde la fixture `repositorio` (nunca de la API), pide el diagnóstico y verifica que la causa es la de su caso y que `eventos_citados` tiene exactamente un ID, que es el del único evento clave del trace de esa operación. **Terminada cuando**: se ve fallar (ruta inexistente).
+- [ ] T027 [P] [US1] Escribir `tests/api/test_conjunto_evaluacion.py` (parte SC-002/SC-004): parametrizado sobre `OP-0001` a `OP-0020`, toma el `caso` de la operación desde la fixture `repositorio` (nunca de la API), pide el diagnóstico y verifica que la causa es la de su caso y que `eventos_citados` tiene exactamente un ID, que es el del único evento clave del trace de esa operación; y SC-007 sobre las mismas 20: 5 pedidos de diagnóstico de cada una dan el mismo cuerpo las 5 veces. **Terminada cuando**: se ve fallar (ruta inexistente).
 
 ### Implementación de la Historia 1
 
@@ -121,7 +131,7 @@ recomendación contra la tabla de casos.
 - [ ] T031 [US1] Agregar en `app/api/esquemas.py` los modelos Pydantic `DiagnosticoSalida` (`tipo: Literal["diagnostico"]`, `causa`, `eventos_citados: list[str]`, `recomendacion`) y `ErrorSalida` (`detalle`). **Terminada cuando**: `uv run python -c "from app.api.esquemas import DiagnosticoSalida, ErrorSalida"` no da error.
 - [ ] T032 [US1] Agregar en `app/api/rutas.py` `GET /operaciones/{id}/diagnostico`: `operacion_o_error`, hora de referencia `op.hora_referencia`, llamada `diagnosticar(op.estado, op.eventos, hora)` (sin pasar `op.caso`) y conversión a `DiagnosticoSalida`; documenta 400/404 con `ErrorSalida`. Depende de T023, T030 y T031. **Terminada cuando**: `uv run pytest tests/api/test_h1_diagnostico_con_evidencia.py tests/api/test_conjunto_evaluacion.py` pasa.
 
-**Checkpoint**: Historia 1 funciona sola: diagnóstico con evidencia de las 20 fallidas con trace completo.
+**Checkpoint**: diagnóstico con evidencia de las 20 fallidas con trace completo. Todavía no es entregable: las OK, las pendientes y los casos borde dan `NotImplementedError` hasta US2.
 
 ---
 
@@ -131,14 +141,14 @@ recomendación contra la tabla de casos.
 operación sigue en curso" y "La operación no tiene un fallo para investigar", sin nombrar causa.
 
 **Prueba independiente**: pedir el diagnóstico de `OP-0021` a `OP-0025`, de una operación OK
-generada (en el test se inserta directo en el repositorio; con US4 se agrega la prueba de punta a
-punta), de `OP-0026`/`OP-0027` y de `OP-0028` a `OP-0030`, y verificar las respuestas sin causa.
+insertada directamente en el repositorio (con `origen="generada"`; con US4 se agrega la prueba de
+punta a punta con una OK generada), de `OP-0026`/`OP-0027` y de `OP-0028` a `OP-0030`, y verificar las respuestas sin causa.
 
 ### Tests de la Historia 2 (primero; deben verse fallar) ⚠️
 
 - [ ] T033 [US2] Agregar en `tests/unit/test_reglas.py` los tests sin causa: estado `ok` → `SinFallo("La operación no tiene un fallo para investigar")`; pendiente con último evento 2 min antes, exactamente 10 min antes y **después** de la hora de referencia → `EnCurso("La operación sigue en curso")`; pendiente con 10 min 1 s y con 15 min → `Diagnostico("no concluyente", (), "Pedir los logs del proveedor desde el último evento conocido")`; fallida sin evento clave con la hora de referencia a 1 min del último evento → "no concluyente" sin citas **enseguida** (el plazo es solo para pendientes); fallida con rechazos que no son clave (`rechazo_origen`+AC01, `rechazo_timeout`+AM04, `rechazo_banco_destino`+AB05) → "no concluyente" sin citas; AC01 + AB05 → "no concluyente", cita los dos en orden del trace, "Evidencia contradictoria: revisar manualmente los eventos citados"; AB05 + AB05 → "no concluyente" (no "timeout"), cita los dos; tres eventos clave → cita los tres; determinismo (5 llamadas iguales) para cada variante. Depende de T030 (mismo archivo). **Terminada cuando**: los tests nuevos se ven fallar (`NotImplementedError` o assert).
 - [ ] T034 [P] [US2] Escribir `tests/api/test_h2_sin_respaldo.py`: `test_h2_e1` (`OP-0021`), `test_h2_e2` (operación OK con `origen="generada"` y `hora_referencia=None` insertada con `repositorio.agregar`) → `{"tipo": "sin_fallo", "mensaje": ...}` con claves exactamente `{tipo, mensaje}`, `test_h2_e3` (`OP-0026`) y `test_h2_e4` (`OP-0027`) → `en_curso` con claves exactamente `{tipo, mensaje}`, `test_h2_e5` (`OP-0028`, sin citas), `test_h2_e6` (`OP-0029`, cita `["OP-0029-E3", "OP-0029-E4"]`), `test_h2_e7` (`OP-0030`, cita `["OP-0030-E4", "OP-0030-E5"]`), con textos literales; y hora de referencia de las generadas (FR-026): una pendiente generada insertada con su último evento 5 min antes de `reloj.ahora` → `en_curso`, y tras mover `reloj.ahora` a 11 min → "no concluyente". **Terminada cuando**: se ve fallar (respuestas sin las variantes `sin_fallo`/`en_curso` o error con `hora_referencia=None`).
-- [ ] T035 [P] [US2] Agregar en `tests/api/test_conjunto_evaluacion.py` SC-003 (`OP-0021` a `OP-0025` → "no concluyente", `eventos_citados == []`) y SC-007 (5 pedidos de diagnóstico de cada una de las 25 operaciones dan el mismo cuerpo las 5 veces). Depende de T027 (mismo archivo). **Terminada cuando**: los tests de SC-003 se ven fallar.
+- [ ] T035 [P] [US2] Agregar en `tests/api/test_conjunto_evaluacion.py` SC-003 (`OP-0021` a `OP-0025` → "no concluyente", `eventos_citados == []`) y SC-007 para `OP-0021` a `OP-0025` (5 pedidos de diagnóstico de cada una dan el mismo cuerpo las 5 veces; `OP-0001` a `OP-0020` ya están en T027). Depende de T027 (mismo archivo). **Terminada cuando**: los tests nuevos de SC-003 y SC-007 se ven fallar.
 
 ### Implementación de la Historia 2
 
@@ -160,7 +170,7 @@ para verificar el orden de sus 4 eventos.
 
 ### Tests de la Historia 3 (primero; deben verse fallar) ⚠️
 
-- [ ] T039 [P] [US3] Escribir `tests/api/test_h3_busqueda_y_trace.py`: `test_h3_e1` (`/busqueda?id=OP-0001` → 200, `id == "OP-0001"`); `test_h3_e2` (`OP-9999` → 404, cuerpo exactamente `{"detalle": "Operación no encontrada"}`); `test_h3_e3` parametrizado con `op1`, `op-0001`, `?id=`, sin parámetro y `%20OP-0001` → 400, cuerpo exactamente `{"detalle": "Ingresá un ID con formato OP-0000"}` (sin operación ni "Operación no encontrada"); `test_h3_e4` (`/operaciones/OP-0006` → 4 eventos, momentos estrictamente crecientes, IDs `E1` a `E4`); además: el detalle no tiene las claves `caso` ni `hora_referencia`, `codigo` aparece solo en los rechazos, y `/operaciones/op1` → 400, `/operaciones/OP-9999` → 404. **Terminada cuando**: se ve fallar (rutas inexistentes).
+- [ ] T039 [P] [US3] Escribir `tests/api/test_h3_busqueda_y_trace.py`: `test_h3_e1` (`/busqueda?id=OP-0001` → 200, `id == "OP-0001"`); `test_h3_e2` (`OP-9999` → 404, cuerpo exactamente `{"detalle": "Operación no encontrada"}`); `test_h3_e3` parametrizado con `op1`, `op-0001`, `?id=`, sin parámetro y `%20OP-0001` → 400, cuerpo exactamente `{"detalle": "Ingresá un ID con formato OP-0000"}` (sin operación ni "Operación no encontrada"); `test_h3_e4` (`/operaciones/OP-0006` → 4 eventos, momentos estrictamente crecientes, IDs `E1` a `E4`); además: el detalle no tiene las claves `caso` ni `hora_referencia`, ni ninguna clave de diagnóstico (`tipo`, `causa`, `eventos_citados`, `recomendacion`), porque el diagnóstico se da solo cuando se pide (FR-015), `codigo` aparece solo en los rechazos, y `/operaciones/op1` → 400, `/operaciones/OP-9999` → 404. **Terminada cuando**: se ve fallar (rutas inexistentes).
 
 ### Implementación de la Historia 3
 
@@ -182,13 +192,13 @@ evento e ID asignado.
 ### Tests de la Historia 4 (primero; deben verse fallar) ⚠️
 
 - [ ] T042 [P] [US4] Escribir `tests/unit/test_generador.py`: parametrizado sobre los 6 casos, `generar(caso, "OP-0031", ahora)` da el estado y la secuencia exacta de tipos y códigos de la tabla de casos, el evento y el último evento de la tabla de la historia 4, emisor según `EMISOR_POR_TIPO`, IDs `OP-0031-E1…En`, momentos separados por 1 s y truncados al segundo, último evento `== ahora` truncado en los casos con resultado final y `== ahora − 11 min` en `trace_incompleto` (FR-004), `caso` igual al pedido, `origen == "generada"`, `hora_referencia is None`; misma entrada → operación igual; y `diagnosticar` sobre la operación generada (con `ahora` como hora de referencia) da la causa de su caso para los 5 casos con fallo o pendiente. **Terminada cuando**: se ve fallar por `ImportError` de `app.simulacion.generador`.
-- [ ] T043 [P] [US4] Agregar en `tests/unit/test_repositorio.py` los tests de generación de IDs: con los 30 fijos `siguiente_id() == "OP-0031"`; con `OP-0001` y `OP-0050` → `"OP-0051"` (no reutiliza huecos); `crear(construir)` reserva el ID, llama `construir(id)` y agrega la operación de forma atómica; con `OP-8999` presente, `crear` lanza `IdsAgotados`, no llama `construir` y la cantidad no cambia; 20 hilos llamando `crear` a la vez obtienen 20 IDs distintos y consecutivos. Depende de T008. **Terminada cuando**: los tests nuevos se ven fallar.
+- [ ] T043 [P] [US4] Agregar en `tests/unit/test_repositorio.py` los tests de generación de IDs: con los 30 fijos `siguiente_id() == "OP-0031"`; con `OP-0001` y `OP-0050` → `"OP-0051"` (no reutiliza huecos); `crear(construir)` reserva el ID, llama `construir(id)` y agrega la operación de forma atómica; con `OP-8999` presente, `siguiente_id()` lanza `IdsAgotados`, y `crear` también lo lanza, no llama `construir` y la cantidad no cambia; 20 hilos llamando `crear` a la vez obtienen 20 IDs distintos y consecutivos. Depende de T008. **Terminada cuando**: los tests nuevos se ven fallar.
 - [ ] T044 [P] [US4] Escribir `tests/api/test_h4_generacion.py`: `test_h4_e1` parametrizado con los 6 casos (`POST /operaciones {"caso": ...}` → 201, estado y eventos de la tabla); `test_h4_e2` (`trace_incompleto`: último evento más de 10 min antes de `reloj.ahora`); `test_h4_e3` (primer ID `OP-0031`, segundo `OP-0032`, ninguno coincide con existentes ni empieza con `OP-9`); caso desconocido y cuerpo sin `caso` → 422; agotamiento (FR-032): con `OP-8999` agregado vía `repositorio.agregar` → 409, cuerpo exactamente `{"detalle": "No quedan IDs disponibles para generar operaciones"}` y `repositorio.cantidad()` igual que antes; punta a punta con US2: generar `ok` y pedir su diagnóstico → `sin_fallo`; generar `trace_incompleto` y diagnosticarla enseguida con el mismo `reloj.ahora` → "no concluyente" sin citas. **Terminada cuando**: se ve fallar (405/404 en `POST /operaciones`).
 
 ### Implementación de la Historia 4
 
 - [ ] T045 [US4] Implementar `app/simulacion/generador.py` (solo stdlib y `app.dominio`, sin reloj ni azar): secuencia de `(tipo, codigo)` por `Caso` y `generar(caso, id_operacion, ahora) -> Operacion` según research R8; exportar `generar` en `app/simulacion/__init__.py`. Depende de T042 y de T036 (el test cruza con `diagnosticar`). **Terminada cuando**: `uv run pytest tests/unit/test_generador.py` pasa.
-- [ ] T046 [US4] Implementar en `app/almacen/repositorio.py` `siguiente_id()`, `crear(construir)` y la excepción `IdsAgotados`, con un `threading.Lock` que cubre la reserva del ID y la inserción (research R9). Depende de T043. **Terminada cuando**: `uv run pytest tests/unit/test_repositorio.py` pasa completo.
+- [ ] T046 [US4] Implementar en `app/almacen/repositorio.py` `siguiente_id()` (lanza `IdsAgotados` si el siguiente sería `OP-9000`), `crear(construir)` y la excepción `IdsAgotados`, con un `threading.Lock` que cubre la reserva del ID y la inserción (research R9). Depende de T043. **Terminada cuando**: `uv run pytest tests/unit/test_repositorio.py` pasa completo.
 - [ ] T047 [US4] Agregar en `app/api/esquemas.py` `PedidoGeneracion` (`caso: Caso`). Depende de T040 (la respuesta usa `OperacionDetalle`). **Terminada cuando**: `uv run python -c "from app.api.esquemas import PedidoGeneracion"` no da error.
 - [ ] T048 [US4] Agregar en `app/api/rutas.py` `POST /operaciones` (status 201, `response_model=OperacionDetalle`): toma `ahora = reloj()`, llama `repositorio.crear(lambda id: generar(pedido.caso, id, ahora))` y convierte `IdsAgotados` en `ErrorPayTrace(409, "No quedan IDs disponibles para generar operaciones")`. Depende de T045, T046 y T047. **Terminada cuando**: `uv run pytest tests/api/test_h4_generacion.py` pasa.
 
@@ -220,9 +230,9 @@ por ID ascendente.
 
 ## Fase 8: Pulido y verificaciones transversales
 
-- [ ] T054 [P] Escribir `tests/api/test_tiempos.py` (SC-005, SC-006): 5 pedidos de diagnóstico y 5 de `GET /operaciones/{id}` por cada una de las 25 operaciones del conjunto de evaluación (125 de cada tipo), medidos con `time.perf_counter`; al menos el 95 % de cada grupo en ≤ 2 s. **Terminada cuando**: `uv run pytest tests/api/test_tiempos.py` pasa.
-- [ ] T055 [P] Escribir `tests/unit/test_sin_conexiones_externas.py` (principios II y IV, FR-028): recorre el AST de todos los `.py` de `app/` y falla si hay imports de `httpx`, `requests`, `urllib.request`, `urllib3`, `http.client`, `socket`, `aiohttp`, `random`, `secrets`, `openai` o `anthropic`. **Terminada cuando**: `uv run pytest tests/unit/test_sin_conexiones_externas.py` pasa.
-- [ ] T056 Correr la suite completa con `uv run pytest` y revisar con `git diff` que ningún test cambió después de su fase roja salvo por un cambio justificado contra el spec (principio III). **Terminada cuando**: toda la suite está en verde y no hay tests editados para que pasen.
+- [ ] T054 [P] Escribir `tests/api/test_tiempos.py` (SC-005, SC-006; excepción al rojo→verde, ver Tests): 5 pedidos de diagnóstico y 5 de `GET /operaciones/{id}` por cada una de las 25 operaciones del conjunto de evaluación (125 de cada tipo), medidos con `time.perf_counter`; al menos el 95 % de cada grupo en ≤ 2 s. **Terminada cuando**: `uv run pytest tests/api/test_tiempos.py` pasa.
+- [ ] T055 [P] Escribir `tests/unit/test_sin_conexiones_externas.py` (principios II y IV, FR-028; excepción al rojo→verde, ver Tests): recorre el AST de todos los `.py` de `app/` y falla si hay imports de `httpx`, `requests`, `urllib.request`, `urllib3`, `http.client`, `socket`, `aiohttp`, `random`, `secrets`, `openai` o `anthropic`. **Terminada cuando**: `uv run pytest tests/unit/test_sin_conexiones_externas.py` pasa.
+- [ ] T056 Correr la suite completa con `uv run pytest` y, para cada archivo de test, compararlo con `git diff <commit en rojo> HEAD -- <archivo>` contra el commit de la tarea de test que lo dejó fallando (ver Convenciones). Si un archivo recibió tests en varias tareas (p. ej. `test_reglas.py`: T025 y T033), cada parte se compara contra su propio commit en rojo. Todo cambio posterior tiene que estar justificado contra el spec, nunca hecho para que el test pase (principio III). T054 y T055 no tienen commit en rojo (ver Tests). **Terminada cuando**: toda la suite está en verde, cada archivo de test se comparó contra su commit en rojo y no hay tests editados para que pasen.
 - [ ] T057 Recorrer a mano los pasos 1 a 14 de `specs/001-diagnostico-transferencias/quickstart.md` con `uv run uvicorn app.main:app` y `curl`. **Terminada cuando**: los 14 pasos dan lo esperado (SC-001 queda para la medición con una persona, fuera de esta lista).
 
 ---
@@ -248,7 +258,7 @@ por ID ascendente.
 ## Oportunidades de paralelismo
 
 - Fase 1: T003 y T004.
-- Fase 2: T005, T007, T009, T013, T019 y T021 (tests de piezas distintas); luego T017 y T018 junto con la serie T014–T016.
+- Fase 2: T005, T007, T009, T019 y T021 (tests de piezas distintas); T013 después de T012; luego T017 y T018 junto con la serie T014–T016.
 - US1: T024, T025, T026 y T027 (cuatro archivos de test); después T028 y T029.
 - US2: T034 y T035 junto con T033.
 - US3: T039 puede escribirse mientras se hace US1/US2.
@@ -282,15 +292,15 @@ Tarea: "T044 Escenarios H4 en tests/api/test_h4_generacion.py"
 
 ## Estrategia de implementación
 
-### MVP (Historia 1)
+### MVP (Historias 1 y 2)
 
 1. Fase 1 (Setup) y Fase 2 (Fundacional).
 2. Fase 3 (US1): diagnóstico con evidencia de las 20 fallidas con trace completo.
-3. **Parar y validar**: `uv run pytest` en verde y `curl localhost:8000/operaciones/OP-0001/diagnostico`.
+3. Fase 4 (US2): "no concluyente", "en curso" y "sin fallo"; el módulo de reglas queda completo.
+4. **Parar y validar**: `uv run pytest` en verde y `curl localhost:8000/operaciones/OP-0001/diagnostico`.
 
-Recomendación: tomar **US1 + US2** como MVP real. US1 sola deja el principio I a medias (las
-pendientes, las OK y los casos borde dan `NotImplementedError`); con US2 el módulo de reglas queda
-completo.
+US1 sola no es un MVP: deja el principio I a medias (las pendientes, las OK y los casos borde dan
+`NotImplementedError`).
 
 ### Entrega incremental
 
@@ -304,7 +314,8 @@ completo.
 
 ## Notas
 
-- No se commitea nada sin mostrar antes el `git diff` y esperar el OK (AGENTS.md).
+- Commits: ver Convenciones (un commit por tarea sin OK individual; revisión con `git log` y
+  `uv run pytest` al final de cada fase).
 - Revisión de cada cambio (constitución): rechazar causas sin evento citado, lectura del reloj
   dentro de `app/diagnostico/`, azar o LLM en el diagnóstico, tests editados para que pasen, y
   conexiones o datos reales.

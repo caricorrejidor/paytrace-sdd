@@ -126,8 +126,8 @@ justificación y las alternativas descartadas.
 
 - **Decisión**: el repositorio en memoria (`app/almacen/repositorio.py`) guarda las operaciones en
   un `dict` por ID. El siguiente ID es `máximo número existente + 1` (FR-003), calculado y reservado
-  bajo un `threading.Lock`, porque FastAPI ejecuta los endpoints síncronos en un pool de hilos. Si el
-  siguiente número fuera ≥ 9000, la generación responde 409 "No quedan IDs disponibles para generar
+  dentro de `crear(construir)` bajo un `threading.Lock`, porque FastAPI ejecuta los endpoints síncronos en un pool de hilos. Si el
+  siguiente número fuera ≥ 9000, `siguiente_id()` lanza `IdsAgotados` y la generación responde 409 "No quedan IDs disponibles para generar
   operaciones" y no crea ninguna operación (FR-032).
 - **Justificación**: FR-002/FR-003 prohíben `OP-9xxx` siempre y FR-032 define el rechazo y su
   mensaje literal. La reserva del ID y la inserción ocurren bajo el mismo lock, así que un rechazo no
@@ -142,7 +142,8 @@ justificación y las alternativas descartadas.
   [contracts/api.md](./contracts/api.md)):
   - `POST /operaciones` (generar), `GET /operaciones` (listar), `GET /busqueda?id=` (buscar),
     `GET /operaciones/{id}` (abrir, con trace), `GET /operaciones/{id}/diagnostico` (diagnosticar).
-  - El formato de ID se valida con `^OP-[0-9]{4}$` (no `\d`, que en Python acepta dígitos Unicode),
+  - El formato de ID se valida con `re.fullmatch(r"OP-[0-9]{4}", texto)` (no `\d`, que en Python
+    acepta dígitos Unicode, ni `$`, que acepta un `\n` final),
     sin recortar espacios: inválido → 400 con "Ingresá un ID con formato OP-0000"; válido e
     inexistente → 404 con "Operación no encontrada".
   - El diagnóstico es una unión discriminada por `tipo`: `diagnostico` (causa, eventos citados,

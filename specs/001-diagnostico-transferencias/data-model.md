@@ -50,7 +50,7 @@ clave solo si es `rechazo_origen` + `AM04`, `rechazo_banco_destino` + `AC01` o `
 
 | Campo | Tipo | Reglas |
 |---|---|---|
-| `id` | `str` | `^OP-[0-9]{4}$`, único, nunca `OP-9xxx` (FR-002). |
+| `id` | `str` | Coincidencia completa (`re.fullmatch`) de `OP-[0-9]{4}`, único, nunca `OP-9xxx` (FR-002). |
 | `estado` | `Estado` | Coincide con el trace (supuesto del spec). |
 | `eventos` | `tuple[Evento, ...]` | El trace: al menos un evento, en orden cronológico estricto (FR-014, FR-031). |
 | `caso` | `Caso \| None` | Caso de origen. Lo tienen las generadas y las del conjunto de evaluación. **No se pasa a las reglas ni se expone en la API.** |
@@ -88,9 +88,11 @@ Sale de `Operacion.hora_referencia` en las fijas y del reloj inyectado por la AP
 ### Repositorio en memoria (`app/almacen/repositorio.py`)
 
 - `dict[str, Operacion]`, cargado al iniciar con los tres archivos fijos (FR-030).
-- `siguiente_id()`: `OP-{máximo+1:04d}` bajo lock; si llegaría a `OP-9000`, rechaza la
-  generación sin crear nada (FR-003, FR-032,
-  [research.md R9](./research.md#r9-asignación-de-ids-y-concurrencia)).
+- `siguiente_id()`: devuelve `OP-{máximo+1:04d}`; si sería `OP-9000` (el mayor existente es
+  `OP-8999`), lanza `IdsAgotados` (FR-003, FR-032).
+- `crear(construir)`: bajo un `threading.Lock`, calcula `siguiente_id()`, llama `construir(id)` y
+  agrega la operación, todo atómico. Si `siguiente_id()` lanza `IdsAgotados`, no llama `construir`
+  y no crea nada ([research.md R9](./research.md#r9-asignación-de-ids-y-concurrencia)).
 - `listar()`: todas, ordenadas por ID ascendente (FR-013).
 - Sin persistencia: al reiniciar quedan solo los datos fijos (FR-009).
 
@@ -98,7 +100,8 @@ Sale de `Operacion.hora_referencia` en las fijas y del reloj inyectado por la AP
 
 La carga de los archivos fijos rechaza (y la app no arranca) si:
 
-1. Un ID de operación no cumple `^OP-[0-9]{4}$` o empieza con `OP-9`.
+1. Un ID de operación no cumple, con coincidencia completa (`re.fullmatch`), `OP-[0-9]{4}`, o
+   empieza con `OP-9`. No se usa `$`, que en Python acepta un `\n` final.
 2. Hay IDs de operación o de evento repetidos, dentro de un archivo o entre archivos.
 3. Una operación no tiene eventos, o sus momentos no son estrictamente crecientes.
 4. Un momento o una hora de referencia no tiene zona horaria.

@@ -12,7 +12,7 @@ Aplican a todo endpoint que recibe un ID de operación.
 
 | Situación | Status | Cuerpo |
 |---|---|---|
-| ID vacío, ausente o que no cumple `^OP-[0-9]{4}$` (`op1`, `op-0001`, ` OP-0001`) | 400 | `{"detalle": "Ingresá un ID con formato OP-0000"}` |
+| ID vacío, ausente o que no cumple `OP-[0-9]{4}` con coincidencia completa (`re.fullmatch`) (`op1`, `op-0001`, ` OP-0001`) | 400 | `{"detalle": "Ingresá un ID con formato OP-0000"}` |
 | ID con formato válido que no existe (`OP-9999`) | 404 | `{"detalle": "Operación no encontrada"}` |
 
 Un 400 nunca incluye una operación ni "Operación no encontrada" (FR-012).

@@ -6,7 +6,7 @@
 
 ## Summary
 
-PayTrace es una API (sin front) que permite al analista generar transferencias simuladas por caso,
+PayTrace es una API (sin front: el analista la usa desde la documentación interactiva `/docs`) que permite al analista generar transferencias simuladas por caso,
 buscarlas y listarlas, ver su trace en orden y pedir un diagnóstico. El diagnóstico lo calcula un
 módulo puro de reglas fijas (`app/diagnostico/`), aislado de la API, que recibe solo el estado, el
 trace y la hora de referencia: nombra la causa citando exactamente un evento clave, o responde "no
@@ -90,26 +90,31 @@ app/
 ├── almacen/
 │   ├── __init__.py
 │   ├── carga.py             # lee y valida los JSON fijos (Pydantic) → Operacion
-│   └── repositorio.py       # dict en memoria, siguiente_id() con lock, listar()
+│   └── repositorio.py       # dict en memoria; crear(construir) bajo lock, siguiente_id(), IdsAgotados, listar()
 ├── api/
 │   ├── __init__.py
 │   ├── rutas.py             # los 5 endpoints de contracts/api.md
 │   ├── esquemas.py          # modelos Pydantic de request/response
-│   └── dependencias.py      # obtener_repositorio(), obtener_reloj() (sobrescribibles en tests)
+│   └── dependencias.py      # ErrorPayTrace, operacion_o_error(), obtener_repositorio(), obtener_reloj() (sobrescribibles en tests)
 └── datos/
     ├── conjunto_evaluacion.json   # OP-0001..OP-0025
     ├── prueba_plazo.json          # OP-0026..OP-0027
     └── casos_borde.json           # OP-0028..OP-0030
 
 tests/
-├── conftest.py              # TestClient con reloj fijo y repositorio fresco por test
 ├── unit/
+│   ├── test_dominio.py              # enums, EMISOR_POR_TIPO, inmutabilidad, es_id_valido()
+│   ├── test_datos_fijos.py          # los 30 JSON reales: IDs, secuencias por caso, horas de referencia
+│   ├── test_dependencias.py         # operacion_o_error() (400/404), obtener_reloj()
+│   ├── test_sin_conexiones_externas.py  # AST: sin clientes HTTP, sockets, azar ni LLM en app/
 │   ├── test_reglas.py               # todas las ramas de diagnosticar(), límite 10 min, determinismo
 │   ├── test_reglas_aislamiento.py   # AST: sin fastapi/pydantic/random/time/now()/caso en app/diagnostico
 │   ├── test_generador.py            # los 6 casos: estado, eventos, último evento, momentos crecientes
 │   ├── test_carga_datos.py          # archivos válidos, cantidades, IDs, rechazo de datos inválidos
 │   └── test_repositorio.py          # siguiente ID, nunca OP-9xxx, listado ordenado
 └── api/
+    ├── conftest.py                  # TestClient con reloj fijo y repositorio fresco por test
+    ├── test_arranque.py             # 30 datos fijos al iniciar; generadas se pierden al reiniciar (FR-009)
     ├── test_h1_diagnostico_con_evidencia.py
     ├── test_h2_sin_respaldo.py
     ├── test_h3_busqueda_y_trace.py
@@ -138,8 +143,10 @@ no conocen la API ni el reloj; `diagnostico` tampoco conoce el caso.
   `test_reglas_aislamiento.py` van antes que `app/diagnostico/`; los tests de cada historia antes
   de su endpoint.
 - **Datos fijos**: las 30 operaciones se escriben a mano según
-  [contracts/datos-fijos.md](./contracts/datos-fijos.md); `test_carga_datos.py` las valida contra
-  las cantidades y la secuencia de cada caso.
+  [contracts/datos-fijos.md](./contracts/datos-fijos.md). `test_carga_datos.py` prueba las reglas de
+  validación de la carga (incluidas las cantidades) y `test_datos_fijos.py` verifica, sobre los
+  archivos reales, la secuencia de cada caso. La carga no valida secuencias: un JSON con una secuencia
+  rota arranca, y lo detecta `test_datos_fijos.py`.
 - **Agotamiento de IDs**: el 409 de `POST /operaciones` implementa FR-032
   ([research R9](./research.md#r9-asignación-de-ids-y-concurrencia)). Lleva un test unitario del
   repositorio y un test de API que verifica el mensaje y que la cantidad de operaciones no cambia.

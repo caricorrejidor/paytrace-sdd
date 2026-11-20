@@ -29,7 +29,8 @@ emisores y códigos.
 
 - Momentos y horas de referencia en ISO 8601 con zona (`Z`).
 - `caso` es opcional en el formato; lo llevan las operaciones del conjunto de evaluación (los tests
-  lo usan para saber el resultado esperado). Nunca llega a las reglas ni a la API.
+  lo usan para saber el resultado esperado). `prueba_plazo.json` y `casos_borde.json` **no** lo
+  llevan. Nunca llega a las reglas ni a la API.
 - Las reglas de validación están en [data-model.md](../data-model.md#reglas-de-validación).
 
 ## Contenido de cada archivo

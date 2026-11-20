@@ -43,11 +43,10 @@ Con la API corriendo:
 | 13 | Generar `trace_incompleto` y diagnosticarla enseguida | último evento > 10 min antes; "no concluyente" | H4-E2, FR-021 |
 | 14 | Reiniciar la API y listar | vuelven a ser 30; las generadas se perdieron | FR-009 |
 
-## Medición humana (SC-001, SC-005, SC-006)
+## Mediciones (SC-001, SC-005, SC-006)
 
-- **SC-001**: una persona que no generó los datos elige 10 operaciones del conjunto de evaluación y
-  cronometra, para cada una, desde que busca el ID hasta que tiene el diagnóstico. Aprobado si la
+- **SC-001**: una persona que no generó los datos elige 10 operaciones del conjunto de evaluación y,
+  usando `http://localhost:8000/docs`, cronometra, para cada una, desde que busca el ID hasta que tiene el diagnóstico. Aprobado si la
   mediana es ≤ 5 minutos.
-- **SC-005 / SC-006**: la suite incluye una verificación automática del tiempo del servidor (125
-  pedidos de diagnóstico y 125 de trace, ≥ 95 % en ≤ 2 s). La medición de punta a punta con la
-  persona que mira el resultado se hace en la demo con el mismo criterio.
+- **SC-005 / SC-006**: se miden como tiempo del servidor y los cubre la suite (`tests/api/test_tiempos.py`:
+  125 pedidos de diagnóstico y 125 de trace, ≥ 95 % en ≤ 2 s). No hace falta medición humana.
