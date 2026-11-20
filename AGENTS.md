@@ -19,3 +19,4 @@ Aplica reglas fijas al trace, cita el evento que prueba la causa y recomienda el
 - No usar LLM ni nada aleatorio en el diagnóstico: solo reglas fijas, y la misma operación siempre da el mismo resultado.
 - No conectar con bancos, proveedores ni sistemas reales, y no usar datos personales reales: todo es simulado.
 - No commitear sin mostrar antes el git diff y esperar mi OK.
+  Excepción: durante /speckit-implement, cada tarea se commitea con conventional-commit sin esperar mi OK, y al terminar cada fase se frena para que revise el git log y uv run pytest (ver tasks.md).
