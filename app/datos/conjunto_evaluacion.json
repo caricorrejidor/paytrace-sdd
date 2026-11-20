@@ -109,6 +109,131 @@
         {"id": "OP-0010-E3", "momento": "2026-11-10T15:10:04Z", "tipo": "rechazo_banco_destino", "emisor": "banco_destino", "codigo": "AC01"},
         {"id": "OP-0010-E4", "momento": "2026-11-10T15:10:06Z", "tipo": "reversa_debito", "emisor": "origen"}
       ]
+    },
+    {
+      "id": "OP-0011",
+      "estado": "fallida",
+      "caso": "timeout_con_reversa",
+      "hora_referencia": "2026-11-11T15:52:08Z",
+      "eventos": [
+        {"id": "OP-0011-E1", "momento": "2026-11-11T15:47:00Z", "tipo": "orden_enviada", "emisor": "origen"},
+        {"id": "OP-0011-E2", "momento": "2026-11-11T15:47:02Z", "tipo": "debito_origen", "emisor": "origen"},
+        {"id": "OP-0011-E3", "momento": "2026-11-11T15:47:04Z", "tipo": "envio_proveedor", "emisor": "origen"},
+        {"id": "OP-0011-E4", "momento": "2026-11-11T15:47:06Z", "tipo": "rechazo_timeout", "emisor": "proveedor", "codigo": "AB05"},
+        {"id": "OP-0011-E5", "momento": "2026-11-11T15:47:08Z", "tipo": "reversa_debito", "emisor": "origen"}
+      ]
+    },
+    {
+      "id": "OP-0012",
+      "estado": "fallida",
+      "caso": "timeout_con_reversa",
+      "hora_referencia": "2026-11-12T16:29:08Z",
+      "eventos": [
+        {"id": "OP-0012-E1", "momento": "2026-11-12T16:24:00Z", "tipo": "orden_enviada", "emisor": "origen"},
+        {"id": "OP-0012-E2", "momento": "2026-11-12T16:24:02Z", "tipo": "debito_origen", "emisor": "origen"},
+        {"id": "OP-0012-E3", "momento": "2026-11-12T16:24:04Z", "tipo": "envio_proveedor", "emisor": "origen"},
+        {"id": "OP-0012-E4", "momento": "2026-11-12T16:24:06Z", "tipo": "rechazo_timeout", "emisor": "proveedor", "codigo": "AB05"},
+        {"id": "OP-0012-E5", "momento": "2026-11-12T16:24:08Z", "tipo": "reversa_debito", "emisor": "origen"}
+      ]
+    },
+    {
+      "id": "OP-0013",
+      "estado": "fallida",
+      "caso": "timeout_con_reversa",
+      "hora_referencia": "2026-11-13T17:06:08Z",
+      "eventos": [
+        {"id": "OP-0013-E1", "momento": "2026-11-13T17:01:00Z", "tipo": "orden_enviada", "emisor": "origen"},
+        {"id": "OP-0013-E2", "momento": "2026-11-13T17:01:02Z", "tipo": "debito_origen", "emisor": "origen"},
+        {"id": "OP-0013-E3", "momento": "2026-11-13T17:01:04Z", "tipo": "envio_proveedor", "emisor": "origen"},
+        {"id": "OP-0013-E4", "momento": "2026-11-13T17:01:06Z", "tipo": "rechazo_timeout", "emisor": "proveedor", "codigo": "AB05"},
+        {"id": "OP-0013-E5", "momento": "2026-11-13T17:01:08Z", "tipo": "reversa_debito", "emisor": "origen"}
+      ]
+    },
+    {
+      "id": "OP-0014",
+      "estado": "fallida",
+      "caso": "timeout_con_reversa",
+      "hora_referencia": "2026-11-14T17:43:08Z",
+      "eventos": [
+        {"id": "OP-0014-E1", "momento": "2026-11-14T17:38:00Z", "tipo": "orden_enviada", "emisor": "origen"},
+        {"id": "OP-0014-E2", "momento": "2026-11-14T17:38:02Z", "tipo": "debito_origen", "emisor": "origen"},
+        {"id": "OP-0014-E3", "momento": "2026-11-14T17:38:04Z", "tipo": "envio_proveedor", "emisor": "origen"},
+        {"id": "OP-0014-E4", "momento": "2026-11-14T17:38:06Z", "tipo": "rechazo_timeout", "emisor": "proveedor", "codigo": "AB05"},
+        {"id": "OP-0014-E5", "momento": "2026-11-14T17:38:08Z", "tipo": "reversa_debito", "emisor": "origen"}
+      ]
+    },
+    {
+      "id": "OP-0015",
+      "estado": "fallida",
+      "caso": "timeout_con_reversa",
+      "hora_referencia": "2026-11-15T18:20:08Z",
+      "eventos": [
+        {"id": "OP-0015-E1", "momento": "2026-11-15T18:15:00Z", "tipo": "orden_enviada", "emisor": "origen"},
+        {"id": "OP-0015-E2", "momento": "2026-11-15T18:15:02Z", "tipo": "debito_origen", "emisor": "origen"},
+        {"id": "OP-0015-E3", "momento": "2026-11-15T18:15:04Z", "tipo": "envio_proveedor", "emisor": "origen"},
+        {"id": "OP-0015-E4", "momento": "2026-11-15T18:15:06Z", "tipo": "rechazo_timeout", "emisor": "proveedor", "codigo": "AB05"},
+        {"id": "OP-0015-E5", "momento": "2026-11-15T18:15:08Z", "tipo": "reversa_debito", "emisor": "origen"}
+      ]
+    },
+    {
+      "id": "OP-0016",
+      "estado": "fallida",
+      "caso": "timeout_sin_reversa",
+      "hora_referencia": "2026-11-16T18:57:06Z",
+      "eventos": [
+        {"id": "OP-0016-E1", "momento": "2026-11-16T18:52:00Z", "tipo": "orden_enviada", "emisor": "origen"},
+        {"id": "OP-0016-E2", "momento": "2026-11-16T18:52:02Z", "tipo": "debito_origen", "emisor": "origen"},
+        {"id": "OP-0016-E3", "momento": "2026-11-16T18:52:04Z", "tipo": "envio_proveedor", "emisor": "origen"},
+        {"id": "OP-0016-E4", "momento": "2026-11-16T18:52:06Z", "tipo": "rechazo_timeout", "emisor": "proveedor", "codigo": "AB05"}
+      ]
+    },
+    {
+      "id": "OP-0017",
+      "estado": "fallida",
+      "caso": "timeout_sin_reversa",
+      "hora_referencia": "2026-11-17T19:34:06Z",
+      "eventos": [
+        {"id": "OP-0017-E1", "momento": "2026-11-17T19:29:00Z", "tipo": "orden_enviada", "emisor": "origen"},
+        {"id": "OP-0017-E2", "momento": "2026-11-17T19:29:02Z", "tipo": "debito_origen", "emisor": "origen"},
+        {"id": "OP-0017-E3", "momento": "2026-11-17T19:29:04Z", "tipo": "envio_proveedor", "emisor": "origen"},
+        {"id": "OP-0017-E4", "momento": "2026-11-17T19:29:06Z", "tipo": "rechazo_timeout", "emisor": "proveedor", "codigo": "AB05"}
+      ]
+    },
+    {
+      "id": "OP-0018",
+      "estado": "fallida",
+      "caso": "timeout_sin_reversa",
+      "hora_referencia": "2026-11-18T20:11:06Z",
+      "eventos": [
+        {"id": "OP-0018-E1", "momento": "2026-11-18T20:06:00Z", "tipo": "orden_enviada", "emisor": "origen"},
+        {"id": "OP-0018-E2", "momento": "2026-11-18T20:06:02Z", "tipo": "debito_origen", "emisor": "origen"},
+        {"id": "OP-0018-E3", "momento": "2026-11-18T20:06:04Z", "tipo": "envio_proveedor", "emisor": "origen"},
+        {"id": "OP-0018-E4", "momento": "2026-11-18T20:06:06Z", "tipo": "rechazo_timeout", "emisor": "proveedor", "codigo": "AB05"}
+      ]
+    },
+    {
+      "id": "OP-0019",
+      "estado": "fallida",
+      "caso": "timeout_sin_reversa",
+      "hora_referencia": "2026-11-19T20:48:06Z",
+      "eventos": [
+        {"id": "OP-0019-E1", "momento": "2026-11-19T20:43:00Z", "tipo": "orden_enviada", "emisor": "origen"},
+        {"id": "OP-0019-E2", "momento": "2026-11-19T20:43:02Z", "tipo": "debito_origen", "emisor": "origen"},
+        {"id": "OP-0019-E3", "momento": "2026-11-19T20:43:04Z", "tipo": "envio_proveedor", "emisor": "origen"},
+        {"id": "OP-0019-E4", "momento": "2026-11-19T20:43:06Z", "tipo": "rechazo_timeout", "emisor": "proveedor", "codigo": "AB05"}
+      ]
+    },
+    {
+      "id": "OP-0020",
+      "estado": "fallida",
+      "caso": "timeout_sin_reversa",
+      "hora_referencia": "2026-11-20T21:25:06Z",
+      "eventos": [
+        {"id": "OP-0020-E1", "momento": "2026-11-20T21:20:00Z", "tipo": "orden_enviada", "emisor": "origen"},
+        {"id": "OP-0020-E2", "momento": "2026-11-20T21:20:02Z", "tipo": "debito_origen", "emisor": "origen"},
+        {"id": "OP-0020-E3", "momento": "2026-11-20T21:20:04Z", "tipo": "envio_proveedor", "emisor": "origen"},
+        {"id": "OP-0020-E4", "momento": "2026-11-20T21:20:06Z", "tipo": "rechazo_timeout", "emisor": "proveedor", "codigo": "AB05"}
+      ]
     }
   ]
 }
