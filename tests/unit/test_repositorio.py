@@ -136,3 +136,24 @@ def test_20_hilos_creando_a_la_vez_obtienen_ids_distintos_y_consecutivos():
 
     assert sorted(creados) == [f"OP-{n:04d}" for n in range(2, 22)]
     assert repo.cantidad() == 21
+
+
+# --- Historia 5: listar (FR-013) ---------------------------------------------
+
+
+def test_listar_devuelve_todas_por_id_ascendente_aunque_se_carguen_desordenadas():
+    repo = _con_ids("OP-0003", "OP-0001", "OP-0002")
+
+    assert [op.id for op in repo.listar()] == ["OP-0001", "OP-0002", "OP-0003"]
+
+
+def test_listar_incluye_las_agregadas_y_creadas_despues_del_arranque():
+    repo = _con_ids("OP-0005", "OP-0002")
+    repo.agregar(_operacion("OP-0004", origen="generada"))
+    repo.crear(lambda id_operacion: _operacion(id_operacion, origen="generada"))
+
+    assert [op.id for op in repo.listar()] == ["OP-0002", "OP-0004", "OP-0005", "OP-0006"]
+
+
+def test_listar_vacio_da_lista_vacia():
+    assert list(Repositorio([]).listar()) == []

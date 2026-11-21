@@ -215,7 +215,7 @@ por ID ascendente.
 
 ### Tests de la Historia 5 (primero; deben verse fallar) ⚠️
 
-- [ ] T049 [P] [US5] Agregar en `tests/unit/test_repositorio.py` los tests de `listar()`: devuelve todas las operaciones ordenadas por ID ascendente aunque se hayan agregado desordenadas, incluidas las agregadas después del arranque. Depende de T043 (mismo archivo). **Terminada cuando**: los tests nuevos se ven fallar.
+- [X] T049 [P] [US5] Agregar en `tests/unit/test_repositorio.py` los tests de `listar()`: devuelve todas las operaciones ordenadas por ID ascendente aunque se hayan agregado desordenadas, incluidas las agregadas después del arranque. Depende de T043 (mismo archivo). **Terminada cuando**: los tests nuevos se ven fallar.
 - [ ] T050 [P] [US5] Escribir `tests/api/test_h5_lista.py`: con solo los datos fijos, `GET /operaciones` → 30 elementos `OP-0001` a `OP-0030` en orden, cada uno con claves exactamente `{id, estado}`; `test_h5_e1`: tras generar `ok`, `fondos_insuficientes` y `trace_incompleto`, la lista tiene 33 elementos y los 3 nuevos con estados `ok`, `fallida` y `pendiente`. **Terminada cuando**: se ve fallar (405 en `GET /operaciones`).
 
 ### Implementación de la Historia 5
