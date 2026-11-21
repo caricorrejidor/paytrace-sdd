@@ -1,0 +1,19 @@
+[project]
+name = "paytrace"
+version = "0.1.0"
+description = "Diagnóstico de transferencias simuladas fallidas o pendientes"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi==0.165.0",
+    "uvicorn==0.54.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "httpx==0.28.1",
+    "pytest==9.2.0",
+]

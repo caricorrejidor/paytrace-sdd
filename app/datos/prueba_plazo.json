@@ -1,0 +1,22 @@
+{
+  "operaciones": [
+    {
+      "id": "OP-0026",
+      "estado": "pendiente",
+      "hora_referencia": "2026-11-03T14:02:02Z",
+      "eventos": [
+        {"id": "OP-0026-E1", "momento": "2026-11-03T14:00:00Z", "tipo": "orden_enviada", "emisor": "origen"},
+        {"id": "OP-0026-E2", "momento": "2026-11-03T14:00:02Z", "tipo": "debito_origen", "emisor": "origen"}
+      ]
+    },
+    {
+      "id": "OP-0027",
+      "estado": "pendiente",
+      "hora_referencia": "2026-11-04T16:40:02Z",
+      "eventos": [
+        {"id": "OP-0027-E1", "momento": "2026-11-04T16:30:00Z", "tipo": "orden_enviada", "emisor": "origen"},
+        {"id": "OP-0027-E2", "momento": "2026-11-04T16:30:02Z", "tipo": "debito_origen", "emisor": "origen"}
+      ]
+    }
+  ]
+}
