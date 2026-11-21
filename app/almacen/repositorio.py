@@ -30,6 +30,11 @@ class Repositorio:
     def cantidad(self) -> int:
         return len(self._operaciones)
 
+    def listar(self) -> list[Operacion]:
+        """Todas las operaciones, fijas y generadas, por ID ascendente (FR-013)."""
+        with self._lock:
+            return sorted(self._operaciones.values(), key=lambda op: op.id)
+
     def agregar(self, operacion: Operacion) -> None:
         with self._lock:
             self._agregar(operacion)
