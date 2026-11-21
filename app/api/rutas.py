@@ -13,7 +13,9 @@ from app.api.esquemas import (
     DiagnosticoSalida,
     EnCursoSalida,
     ErrorSalida,
+    OperacionDetalle,
     SinFalloSalida,
+    detalle_de,
 )
 from app.diagnostico import diagnosticar
 from app.diagnostico.resultados import Diagnostico, EnCurso, Resultado, SinFallo
@@ -27,6 +29,29 @@ ERRORES_DE_ID = {
     400: {"model": ErrorSalida, "description": "ID con formato inválido"},
     404: {"model": ErrorSalida, "description": "Operación no encontrada"},
 }
+
+
+@router.get(
+    "/busqueda",
+    response_model=OperacionDetalle,
+    response_model_exclude_none=True,
+    responses=ERRORES_DE_ID,
+    summary="Buscar una operación por ID",
+)
+def buscar_operacion(repositorio: RepositorioDep, id: str | None = None) -> OperacionDetalle:
+    """Sin `id` o con `id` vacío responde 400, igual que con un formato inválido (FR-012)."""
+    return detalle_de(operacion_o_error(id, repositorio))
+
+
+@router.get(
+    "/operaciones/{id}",
+    response_model=OperacionDetalle,
+    response_model_exclude_none=True,
+    responses=ERRORES_DE_ID,
+    summary="Abrir una operación con su trace",
+)
+def abrir_operacion(id: str, repositorio: RepositorioDep) -> OperacionDetalle:
+    return detalle_de(operacion_o_error(id, repositorio))
 
 
 def _a_salida(resultado: Resultado) -> DiagnosticoSalida | SinFalloSalida | EnCursoSalida:

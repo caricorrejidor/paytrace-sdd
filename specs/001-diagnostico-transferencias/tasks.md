@@ -175,7 +175,7 @@ para verificar el orden de sus 4 eventos.
 ### Implementación de la Historia 3
 
 - [X] T040 [US3] Agregar en `app/api/esquemas.py` `EventoSalida` (`id`, `momento`, `tipo`, `emisor`, `codigo` que no aparece en el JSON si es `None`), `OperacionDetalle` (`id`, `estado`, `eventos`) y la función `detalle_de(op) -> OperacionDetalle` (no copia `caso`, `hora_referencia` ni `origen`). **Terminada cuando**: `uv run python -c "from app.api.esquemas import OperacionDetalle, detalle_de"` no da error.
-- [ ] T041 [US3] Agregar en `app/api/rutas.py` `GET /busqueda` (parámetro `id: str | None = None`, pasa por `operacion_o_error`) y `GET /operaciones/{id}`, ambos con `response_model=OperacionDetalle` y `response_model_exclude_none=True` (o equivalente). Depende de T023 y T040. **Terminada cuando**: `uv run pytest tests/api/test_h3_busqueda_y_trace.py` pasa.
+- [X] T041 [US3] Agregar en `app/api/rutas.py` `GET /busqueda` (parámetro `id: str | None = None`, pasa por `operacion_o_error`) y `GET /operaciones/{id}`, ambos con `response_model=OperacionDetalle` y `response_model_exclude_none=True` (o equivalente). Depende de T023 y T040. **Terminada cuando**: `uv run pytest tests/api/test_h3_busqueda_y_trace.py` pasa.
 
 **Checkpoint**: Historias 1, 2 y 3 funcionan cada una por su cuenta.
 
