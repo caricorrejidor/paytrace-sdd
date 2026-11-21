@@ -14,8 +14,12 @@ justificación y las alternativas descartadas.
 - **Decisión**: Python 3.12 (`requires-python = ">=3.12,<3.13"` y `.python-version` = `3.12`),
   gestionado con uv. Dependencias de ejecución: `fastapi` y `uvicorn`. Dependencias de desarrollo
   (grupo `dev`): `pytest` y `httpx` (lo necesita `fastapi.testclient.TestClient`). Versiones
-  estables en PyPI al 2026-11-18: fastapi 0.165.0, uvicorn 0.54.0, pydantic 2.14.3 (llega con
-  FastAPI), pytest 9.2.0, httpx 0.28.1. Se agregan con `uv add` y quedan fijadas en `uv.lock`.
+  estables en PyPI al 2026-11-18: fastapi 0.165.0, uvicorn 0.54.0, pydantic 2.14.4 (llega con
+  FastAPI; es la versión que resolvió uv), pytest 9.2.0, httpx 0.28.1. Se agregan con `uv add` y
+  quedan fijadas en `uv.lock`.
+- **Nota**: con Starlette 1.10, `TestClient` avisa que `httpx` está deprecado
+  (`StarletteDeprecationWarning`, recomienda `httpx2`). Se deja así a propósito: funciona y
+  cambiarlo es un cambio de stack.
 - **Justificación**: es el stack de AGENTS.md. La máquina tiene Python 3.14 en el sistema; uv
   descarga y usa 3.12 por el `.python-version`, así que no hace falta instalar nada a mano.
 - **Alternativas descartadas**: `fastapi[standard]` (trae CLI, plantillas y extras que una API en

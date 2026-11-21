@@ -18,7 +18,7 @@ al iniciar desde archivos JSON. Decisiones de diseño en [research.md](./researc
 
 **Language/Version**: Python 3.12, gestionado con uv
 
-**Primary Dependencies**: FastAPI 0.165.0 (última estable; trae Pydantic 2.14.3), uvicorn 0.54.0
+**Primary Dependencies**: FastAPI 0.165.0 (última estable; trae Pydantic 2.14.4, la que resolvió uv), uvicorn 0.54.0
 
 **Storage**: N/A. Operaciones en memoria (se pierden al reiniciar, FR-009); datos fijos en archivos
 JSON de solo lectura en `app/datos/`
