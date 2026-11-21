@@ -5,7 +5,13 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
-from app.dominio import CodigoMotivo, Emisor, Estado, Operacion, TipoEvento
+from app.dominio import Caso, CodigoMotivo, Emisor, Estado, Operacion, TipoEvento
+
+
+class PedidoGeneracion(BaseModel):
+    """Cuerpo de `POST /operaciones`. Un caso fuera de la tabla o ausente da 422."""
+
+    caso: Caso
 
 
 class EventoSalida(BaseModel):
