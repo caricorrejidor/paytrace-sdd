@@ -19,6 +19,7 @@ from app.api.esquemas import (
     EnCursoSalida,
     ErrorSalida,
     OperacionDetalle,
+    OperacionResumen,
     PedidoGeneracion,
     SinFalloSalida,
     detalle_de,
@@ -56,6 +57,16 @@ def generar_operacion(
     except IdsAgotados:
         raise ErrorPayTrace(409, "No quedan IDs disponibles para generar operaciones") from None
     return detalle_de(op)
+
+
+@router.get(
+    "/operaciones",
+    response_model=list[OperacionResumen],
+    summary="Listar las operaciones con su estado",
+)
+def listar_operaciones(repositorio: RepositorioDep) -> list[OperacionResumen]:
+    """Fijas y generadas, por ID ascendente (FR-013)."""
+    return [OperacionResumen(id=op.id, estado=op.estado) for op in repositorio.listar()]
 
 
 @router.get(
