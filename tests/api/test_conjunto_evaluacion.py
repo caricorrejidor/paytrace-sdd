@@ -50,3 +50,25 @@ def test_sc007_cinco_pedidos_dan_el_mismo_cuerpo_trace_completo(cliente, id_oper
     cuerpos = [r.json() for r in respuestas]
     assert all(c == cuerpos[0] for c in cuerpos)
     assert cuerpos[0].get("tipo") == "diagnostico"
+
+
+# --- Historia 2: las 5 con trace incompleto ----------------------------------
+
+CON_TRACE_INCOMPLETO = [f"OP-{n:04d}" for n in range(21, 26)]
+
+
+@pytest.mark.parametrize("id_operacion", CON_TRACE_INCOMPLETO)
+def test_sc003_trace_incompleto_termina_como_no_concluyente(cliente, id_operacion):
+    cuerpo = cliente.get(f"/operaciones/{id_operacion}/diagnostico").json()
+
+    assert cuerpo["causa"] == "no concluyente"
+    assert cuerpo["eventos_citados"] == []
+
+
+@pytest.mark.parametrize("id_operacion", CON_TRACE_INCOMPLETO)
+def test_sc007_cinco_pedidos_dan_el_mismo_cuerpo_trace_incompleto(cliente, id_operacion):
+    respuestas = [cliente.get(f"/operaciones/{id_operacion}/diagnostico") for _ in range(5)]
+
+    assert all(r.status_code == 200 for r in respuestas)
+    cuerpos = [r.json() for r in respuestas]
+    assert all(c == cuerpos[0] for c in cuerpos)
