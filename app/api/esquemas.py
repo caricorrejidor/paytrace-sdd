@@ -1,8 +1,39 @@
 """Modelos Pydantic de request y response de la API (contracts/api.md)."""
 
+from datetime import datetime
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
+
+from app.dominio import CodigoMotivo, Emisor, Estado, Operacion, TipoEvento
+
+
+class EventoSalida(BaseModel):
+    id: str
+    momento: datetime
+    tipo: TipoEvento
+    emisor: Emisor
+    codigo: CodigoMotivo | None = None  # solo en los rechazos; las rutas excluyen los None
+
+
+class OperacionDetalle(BaseModel):
+    """Operación con su trace del más antiguo al más nuevo (FR-014). Sin caso ni hora de referencia."""
+
+    id: str
+    estado: Estado
+    eventos: list[EventoSalida]
+
+
+def detalle_de(op: Operacion) -> OperacionDetalle:
+    """No copia `caso`, `hora_referencia` ni `origen`, que son internos."""
+    return OperacionDetalle(
+        id=op.id,
+        estado=op.estado,
+        eventos=[
+            EventoSalida(id=e.id, momento=e.momento, tipo=e.tipo, emisor=e.emisor, codigo=e.codigo)
+            for e in op.eventos
+        ],
+    )
 
 
 class DiagnosticoSalida(BaseModel):
