@@ -5,10 +5,10 @@ reloj, no usa azar y no conoce con qué escenario se generó la operación (cons
 """
 
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app.diagnostico import textos
-from app.diagnostico.resultados import Diagnostico, Resultado
+from app.diagnostico.resultados import Diagnostico, EnCurso, Resultado, SinFallo
 from app.dominio import CodigoMotivo, Estado, Evento, TipoEvento
 
 # Las únicas combinaciones de tipo y código que son evento clave (FR-016).
@@ -19,6 +19,10 @@ _COMBINACIONES_CLAVE = {
 }
 
 
+# Plazo de espera de las pendientes: vence solo con MÁS de 10 minutos (FR-025).
+PLAZO_DE_ESPERA = timedelta(minutes=10)
+
+
 def es_evento_clave(evento: Evento) -> bool:
     return (evento.tipo, evento.codigo) in _COMBINACIONES_CLAVE
 
@@ -26,15 +30,36 @@ def es_evento_clave(evento: Evento) -> bool:
 def diagnosticar(
     estado: Estado, eventos: Sequence[Evento], hora_referencia: datetime
 ) -> Resultado:
+    """Aplica las reglas en el orden de research R3; la primera que aplica decide."""
+    # 1. Una operación OK no se diagnostica (FR-023).
     if estado is Estado.OK:
-        raise NotImplementedError("operación OK: llega con la historia 2")
-    if estado is Estado.PENDIENTE:
-        raise NotImplementedError("plazo de espera de pendientes: llega con la historia 2")
+        return SinFallo(textos.MENSAJE_SIN_FALLO)
 
+    # 2. Una pendiente dentro del plazo sigue en curso (FR-024, FR-025). Con exactamente 10 minutos
+    #    también, y si la hora de referencia es anterior al último evento, la espera es negativa.
+    if estado is Estado.PENDIENTE and hora_referencia - eventos[-1].momento <= PLAZO_DE_ESPERA:
+        return EnCurso(textos.MENSAJE_EN_CURSO)
+
+    # 3. Eventos clave del trace, en su orden.
     claves = [e for e in eventos if es_evento_clave(e)]
-    if len(claves) != 1:
-        raise NotImplementedError("ninguno o más de un evento clave: llega con la historia 2")
 
+    # Más de uno: evidencia contradictoria, sin causa, citando todos (FR-022).
+    if len(claves) > 1:
+        return Diagnostico(
+            textos.CAUSA_NO_CONCLUYENTE,
+            tuple(e.id for e in claves),
+            textos.RECOMENDACION_EVIDENCIA_CONTRADICTORIA,
+        )
+
+    # Ninguno: no concluyente, sin causa y sin citas (FR-021).
+    if not claves:
+        return Diagnostico(
+            textos.CAUSA_NO_CONCLUYENTE,
+            (),
+            textos.RECOMENDACION_SIN_EVENTO_CLAVE,
+        )
+
+    # Exactamente uno: la única rama que nombra una causa (constitución I).
     return _con_un_evento_clave(claves[0], eventos)
 
 
