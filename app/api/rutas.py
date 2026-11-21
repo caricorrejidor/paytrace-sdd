@@ -6,19 +6,26 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from app.almacen.repositorio import Repositorio
-from app.api.dependencias import obtener_reloj, obtener_repositorio, operacion_o_error
+from app.almacen.repositorio import IdsAgotados, Repositorio
+from app.api.dependencias import (
+    ErrorPayTrace,
+    obtener_reloj,
+    obtener_repositorio,
+    operacion_o_error,
+)
 from app.api.esquemas import (
     DiagnosticoRespuesta,
     DiagnosticoSalida,
     EnCursoSalida,
     ErrorSalida,
     OperacionDetalle,
+    PedidoGeneracion,
     SinFalloSalida,
     detalle_de,
 )
 from app.diagnostico import diagnosticar
 from app.diagnostico.resultados import Diagnostico, EnCurso, Resultado, SinFallo
+from app.simulacion import generar
 
 router = APIRouter()
 
@@ -29,6 +36,26 @@ ERRORES_DE_ID = {
     400: {"model": ErrorSalida, "description": "ID con formato inválido"},
     404: {"model": ErrorSalida, "description": "Operación no encontrada"},
 }
+
+
+@router.post(
+    "/operaciones",
+    status_code=201,
+    response_model=OperacionDetalle,
+    response_model_exclude_none=True,
+    responses={409: {"model": ErrorSalida, "description": "No quedan IDs disponibles"}},
+    summary="Generar una operación simulada de un caso",
+)
+def generar_operacion(
+    pedido: PedidoGeneracion, repositorio: RepositorioDep, reloj: RelojDep
+) -> OperacionDetalle:
+    """Toma el siguiente ID libre (FR-003). Si sería OP-9000 responde 409 y no crea nada (FR-032)."""
+    ahora = reloj()
+    try:
+        op = repositorio.crear(lambda id_operacion: generar(pedido.caso, id_operacion, ahora))
+    except IdsAgotados:
+        raise ErrorPayTrace(409, "No quedan IDs disponibles para generar operaciones") from None
+    return detalle_de(op)
 
 
 @router.get(
