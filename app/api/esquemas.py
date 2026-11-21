@@ -22,6 +22,13 @@ class EventoSalida(BaseModel):
     codigo: CodigoMotivo | None = None  # solo en los rechazos; las rutas excluyen los None
 
 
+class OperacionResumen(BaseModel):
+    """Elemento de la lista (FR-013): solo ID y estado."""
+
+    id: str
+    estado: Estado
+
+
 class OperacionDetalle(BaseModel):
     """Operación con su trace del más antiguo al más nuevo (FR-014). Sin caso ni hora de referencia."""
 

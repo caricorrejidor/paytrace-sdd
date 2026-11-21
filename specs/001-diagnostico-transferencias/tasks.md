@@ -221,7 +221,7 @@ por ID ascendente.
 ### Implementación de la Historia 5
 
 - [X] T051 [US5] Implementar `listar()` en `app/almacen/repositorio.py`. Depende de T049. **Terminada cuando**: `uv run pytest tests/unit/test_repositorio.py` pasa completo.
-- [ ] T052 [US5] Agregar en `app/api/esquemas.py` `OperacionResumen` (`id`, `estado`). **Terminada cuando**: `uv run python -c "from app.api.esquemas import OperacionResumen"` no da error.
+- [X] T052 [US5] Agregar en `app/api/esquemas.py` `OperacionResumen` (`id`, `estado`). **Terminada cuando**: `uv run python -c "from app.api.esquemas import OperacionResumen"` no da error.
 - [ ] T053 [US5] Agregar en `app/api/rutas.py` `GET /operaciones` con `response_model=list[OperacionResumen]`. Depende de T051 y T052. **Terminada cuando**: `uv run pytest tests/api/test_h5_lista.py` pasa.
 
 **Checkpoint**: las 5 historias funcionan.
