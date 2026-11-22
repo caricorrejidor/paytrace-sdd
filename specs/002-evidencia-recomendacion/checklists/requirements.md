@@ -33,7 +33,8 @@
 
 - Los 2 marcadores [NEEDS CLARIFICATION] de Edge Cases quedaron resueltos en la sesión 2026-11-22
   (sección Clarifications del spec): "cuenta incorrecta" sin reversa posterior → misma causa y
-  recomendación, evidencia vacía; más de una reversa posterior → se citan todas. Ambos se cubren con
-  pruebas de las reglas, sin datos fijos nuevos (FR-012, FR-013).
+  recomendación, evidencia vacía; más de una reversa posterior → se citan todas, en el orden del
+  trace. Ambos tienen escenario propio (historia 1, escenarios 4 y 5) y se prueban sin datos fijos
+  nuevos (FR-012, FR-013, Assumptions).
 - Todos los ítems pasan; el spec está listo para `/speckit-plan`.
 - La única mención a "la API" (Assumptions) repite el supuesto de interfaz de 001; no fija stack.

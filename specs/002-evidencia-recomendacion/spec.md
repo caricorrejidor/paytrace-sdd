@@ -8,7 +8,8 @@
 
 **Input**: User description: "Feature 002 sobre la feature 001 (specs/001-diagnostico-transferencias/spec.md). Escribila en español, sin stack ni decisiones técnicas. Origen: devolución del profe a la v2. Cambio: el diagnóstico suma un campo "evidencia de la recomendación" con los IDs de los eventos que respaldan la recomendación. En "cuenta incorrecta" y en "timeout con reversa" es la reversa del débito posterior al evento clave; en fondos insuficientes, timeout sin reversa y "no concluyente" (sin evento clave o con evidencia contradictoria) va vacío. En las respuestas sin diagnóstico ("en curso" y operación OK) no aparece. Lo que NO cambia: "eventos citados" sigue citando exactamente un evento, el que prueba la causa (constitución, principio I). Donde algo no esté decidido, dejá [NEEDS CLARIFICATION]. No commitees."
 
-**Fuente**: devolución del profe a la v2. Esta feature extiende la feature 001
+**Fuente**: devolución del profe a la entrega del M3 (v2), noviembre 2026: citar la reversa como
+evidencia de la recomendación. Esta feature extiende la feature 001
 (`specs/001-diagnostico-transferencias/spec.md`); todo lo que esta spec no cambia sigue como está ahí.
 Las referencias "001/FR-xx" remiten a los requisitos de esa spec.
 
@@ -35,8 +36,8 @@ nunca reemplaza ni se suma a los eventos citados.
 | Caso (según lo que ven las reglas) | Causa | Eventos citados | Evidencia de la recomendación |
 |---|---|---|---|
 | Fondos insuficientes | fondos insuficientes | rechazo en origen, código AM04 | vacía |
-| Cuenta incorrecta | cuenta incorrecta | rechazo del banco destino, código AC01 | la reversa del débito posterior al evento clave (todas, si hay más de una; vacía si no hay ninguna) |
-| Timeout con reversa | timeout | rechazo por timeout, código AB05 | la reversa del débito posterior al evento clave (todas, si hay más de una) |
+| Cuenta incorrecta | cuenta incorrecta | rechazo del banco destino, código AC01 | la reversa del débito posterior al evento clave (todas, en el orden del trace, si hay más de una; vacía si no hay ninguna) |
+| Timeout con reversa | timeout | rechazo por timeout, código AB05 | la reversa del débito posterior al evento clave (todas, en el orden del trace, si hay más de una) |
 | Timeout sin reversa | timeout | rechazo por timeout, código AB05 | vacía |
 | No concluyente, sin evento clave (trace incompleto vencido o fallida sin evento clave) | no concluyente | ninguno | vacía |
 | No concluyente, evidencia contradictoria | no concluyente | los eventos clave en conflicto | vacía |
@@ -52,6 +53,8 @@ decir que la respuesta no tiene el campo, igual que no tiene causa, eventos cita
 
 - Q: Si un trace tiene un único rechazo AC01 y ninguna reversa del débito posterior, ¿qué responde el diagnóstico? → A: Sigue siendo "cuenta incorrecta", con el mismo evento citado y la misma recomendación de 001, y la evidencia de la recomendación va vacía. No se agregan operaciones a los datos fijos: este caso se cubre con una prueba de las reglas sobre un trace armado para esa prueba.
 - Q: Si el trace tiene dos o más reversas del débito después del evento clave, ¿qué va en la evidencia de la recomendación? → A: Se citan por su ID todas las reversas del débito posteriores al evento clave. No es evidencia contradictoria: la causa, los eventos citados y la recomendación no cambian. Tampoco se agregan operaciones a los datos fijos; se cubre con una prueba de las reglas.
+- Q: Si la evidencia de la recomendación tiene más de un ID, ¿en qué orden van? → A: En el orden del trace, del evento más antiguo al más nuevo (como 001/FR-014).
+- Q: ¿De dónde sale la operación OK de las pruebas de la historia 3 y de SC-003? → A: Se carga directamente para la prueba, como en 001 (historia 2), porque el conjunto de evaluación no tiene operaciones OK.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -67,6 +70,8 @@ mano en el trace el evento que justifica el próximo paso.
 **Independent Test**: con el conjunto de evaluación cargado, pedir el diagnóstico de las 5 operaciones
 de "cuenta incorrecta" y las 5 de "timeout con reversa", y verificar que la evidencia de la
 recomendación es exactamente la reversa del débito de cada trace y que los eventos citados no cambian.
+Los escenarios 4 y 5 se prueban sobre traces armados para la prueba, que no se agregan a los datos
+fijos.
 
 **Acceptance Scenarios**:
 
@@ -83,13 +88,24 @@ recomendación es exactamente la reversa del débito de cada trace y que los eve
 3. **Dado** una operación de "cuenta incorrecta" o de "timeout con reversa", **Cuando** el analista
    pide el diagnóstico, **Entonces** el ID de la reversa del débito aparece solo en la evidencia de la
    recomendación y no en los eventos citados.
+4. **Dado** un trace armado para la prueba, de una operación fallida, con orden enviada → débito en
+   origen → rechazo del banco destino, código AC01, sin ninguna reversa del débito, **Cuando** el
+   analista pide el diagnóstico, **Entonces** la causa es "cuenta incorrecta", los eventos citados son
+   exactamente el rechazo AC01, la recomendación es la de la tabla de casos de 001 y la evidencia de la
+   recomendación está vacía.
+5. **Dado** un trace armado para la prueba, de una operación fallida, con orden enviada → débito en
+   origen → rechazo del banco destino, código AC01 → reversa del débito → reversa del débito,
+   **Cuando** el analista pide el diagnóstico, **Entonces** la causa es "cuenta incorrecta", los eventos
+   citados son exactamente el rechazo AC01, la recomendación es la de la tabla de casos de 001 y la
+   evidencia de la recomendación tiene exactamente los IDs de las dos reversas, en el orden del trace
+   (primero la más antigua). No es evidencia contradictoria.
 
 ---
 
 ### Historia de usuario 2 - Evidencia de la recomendación vacía cuando no hay evento que la respalde (Priority: P1)
 
-Cuando la recomendación no se apoya en ningún evento del trace aparte del evento clave, o cuando el
-diagnóstico es "no concluyente", el diagnóstico trae el campo de evidencia de la recomendación vacío,
+Cuando no hay ningún evento del trace, aparte del evento clave, que respalde la recomendación, o
+cuando el diagnóstico es "no concluyente", el diagnóstico trae el campo de evidencia de la recomendación vacío,
 sin inventar un evento.
 
 **Why this priority**: mantiene el principio "evidencia o nada" también para la recomendación: el
@@ -135,7 +151,8 @@ diagnóstico, y tampoco incluye la evidencia de la recomendación.
 **Why this priority**: confirma que el cambio no altera las respuestas sin diagnóstico de 001; ya están
 cubiertas por 001 y solo hay que verificar que el nuevo campo no aparece.
 
-**Independent Test**: pedir el diagnóstico de una operación OK y de las 2 operaciones del archivo de
+**Independent Test**: pedir el diagnóstico de una operación OK cargada directamente para la prueba
+(el conjunto de evaluación no tiene operaciones OK, como en 001) y de las 2 operaciones del archivo de
 prueba de plazo, y verificar que ninguna respuesta tiene el campo de evidencia de la recomendación.
 
 **Acceptance Scenarios**:
@@ -161,11 +178,11 @@ prueba de plazo, y verificar que ninguna respuesta tiene el campo de evidencia d
 - **"Cuenta incorrecta" sin reversa del débito posterior al evento clave**: el generador no crea
   operaciones así y los datos fijos no las tienen, pero las reglas solo ven el trace. El diagnóstico
   sigue siendo "cuenta incorrecta", con el mismo evento citado y la misma recomendación, y la evidencia
-  de la recomendación va vacía. Se cubre con una prueba de las reglas, sin agregar datos fijos.
+  de la recomendación va vacía (historia 1, escenario 4).
 - **Más de una reversa del débito posterior al evento clave** (en "cuenta incorrecta" o en "timeout"):
   el generador no crea operaciones así y los datos fijos no las tienen. La evidencia de la
-  recomendación cita todas esas reversas por su ID; la causa, los eventos citados y la recomendación no
-  cambian. Se cubre con una prueba de las reglas, sin agregar datos fijos.
+  recomendación cita todas esas reversas por su ID, en el orden del trace; la causa, los eventos
+  citados y la recomendación no cambian (historia 1, escenario 5).
 - **Pedir el diagnóstico varias veces**: la misma operación, con la misma hora de referencia, da
   siempre la misma evidencia de la recomendación, igual que los demás campos.
 
@@ -177,19 +194,14 @@ prueba de plazo, y verificar que ninguna respuesta tiene el campo de evidencia d
   (por ID de evento), recomendación y evidencia de la recomendación (por ID de evento).
 - **FR-002**: La evidencia de la recomendación DEBE ser una lista de IDs de eventos del trace de la
   operación, que puede estar vacía. Nunca incluye IDs de eventos de otra operación ni IDs que no estén
-  en el trace.
+  en el trace. Si tiene más de un ID, DEBEN ir en el orden del trace, del evento más antiguo al más
+  nuevo.
 - **FR-003**: Si la causa es "cuenta incorrecta", la evidencia de la recomendación DEBE contener los
   IDs de todas las reversas del débito posteriores al evento clave, y solo esos. Si no hay ninguna, DEBE
   estar vacía, y la causa, el evento citado y la recomendación siguen siendo los de 001.
 - **FR-004**: Si la causa es "timeout" y el trace tiene al menos una reversa del débito posterior al
   evento clave (recomendación "El débito ya se devolvió: se puede reintentar la transferencia"), la
   evidencia de la recomendación DEBE contener los IDs de todas esas reversas, y solo esos.
-- **FR-012**: Tener más de una reversa del débito posterior al evento clave NO DEBE tratarse como
-  evidencia contradictoria: no cambia la causa, los eventos citados ni la recomendación.
-- **FR-013**: Los traces de "cuenta incorrecta" sin reversa posterior y con más de una reversa
-  posterior DEBEN cubrirse con pruebas de las reglas sobre traces armados para esas pruebas; NO DEBEN
-  agregarse operaciones a los datos fijos (conjunto de evaluación, archivo de prueba de plazo ni
-  archivo de casos borde).
 - **FR-005**: Si la causa es "fondos insuficientes", o es "timeout" sin reversa del débito posterior al
   evento clave, la evidencia de la recomendación DEBE estar vacía.
 - **FR-006**: Si la causa es "no concluyente", tanto sin ningún evento clave (001/FR-021) como con
@@ -211,6 +223,10 @@ prueba de plazo, y verificar que ninguna respuesta tiene el campo de evidencia d
   mismas reglas fijas que el resto del diagnóstico, solo a partir del trace, el estado y la hora de
   referencia, sin conocer el caso, y DEBE ser determinista: la misma operación con la misma hora de
   referencia da siempre la misma evidencia de la recomendación.
+- **FR-012**: Tener más de una reversa del débito posterior al evento clave NO DEBE tratarse como
+  evidencia contradictoria: no cambia la causa, los eventos citados ni la recomendación.
+- **FR-013**: Esta feature NO DEBE agregar operaciones a los datos fijos (conjunto de evaluación,
+  archivo de prueba de plazo ni archivo de casos borde).
 
 ### Key Entities *(include if feature involves data)*
 
@@ -237,8 +253,8 @@ prueba de plazo, archivo de casos borde, hora de referencia) siguen como en 001.
 - **SC-002**: El **100 %** de las 15 operaciones de "fondos insuficientes", "timeout sin reversa" y
   "trace incompleto" del conjunto de evaluación, y de las 3 del archivo de casos borde, recibe la
   evidencia de la recomendación vacía.
-- **SC-003**: El **0 %** de las respuestas sin diagnóstico (operación OK y las 2 operaciones del
-  archivo de prueba de plazo) incluye el campo de evidencia de la recomendación.
+- **SC-003**: El **0 %** de las respuestas sin diagnóstico (una operación OK cargada directamente para
+  la prueba y las 2 operaciones del archivo de prueba de plazo) incluye el campo de evidencia de la recomendación.
 - **SC-004**: Los criterios SC-002, SC-003 y SC-004 de 001 se siguen cumpliendo al **100 %**: mismos
   eventos citados, mismas causas y mismos "no concluyente" que antes del cambio, en las 25 operaciones
   del conjunto de evaluación.
@@ -256,9 +272,11 @@ prueba de plazo, archivo de casos borde, hora de referencia) siguen como en 001.
 - En "cuenta incorrecta" y "timeout con reversa", los datos fijos y las operaciones generadas tienen
   exactamente una reversa del débito, y es posterior al evento clave (tabla de casos de 001). Los
   traces que no cumplen esto quedan en los Edge Cases.
-- No hay datos fijos nuevos: el conjunto de evaluación y el archivo de casos borde de 001 ya cubren
-  los valores del campo con un ID y vacío, y los traces de los Edge Cases se cubren con pruebas de las
-  reglas (FR-013).
+- No hay datos fijos nuevos (FR-013): el conjunto de evaluación y el archivo de casos borde de 001 ya
+  cubren los valores del campo con un ID y vacío. Los traces de "cuenta incorrecta" sin reversa
+  posterior y con más de una reversa posterior (historia 1, escenarios 4 y 5) se prueban con pruebas de
+  las reglas sobre traces armados para esas pruebas. Esto se aparta del criterio de 001, que cubrió sus
+  casos borde con datos fijos, y es una decisión explícita (Clarifications, sesión 2026-11-22).
 - El campo se llama "evidencia de la recomendación" en el lenguaje del analista; su nombre exacto en la
   respuesta se decide en el plan.
 - La constitución no cambia: el principio I habla de la evidencia de la causa, que sigue igual; la
