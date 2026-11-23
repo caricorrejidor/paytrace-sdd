@@ -256,12 +256,13 @@ prueba de plazo, archivo de casos borde, hora de referencia) siguen como en 001.
 - **SC-003**: El **0 %** de las respuestas sin diagnóstico (una operación OK cargada directamente para
   la prueba y las 2 operaciones del archivo de prueba de plazo) incluye el campo de evidencia de la recomendación.
 - **SC-004**: Los criterios SC-002, SC-003 y SC-004 de 001 se siguen cumpliendo al **100 %**: mismos
-  eventos citados, mismas causas y mismos "no concluyente" que antes del cambio, en las 25 operaciones
-  del conjunto de evaluación.
+  eventos citados, mismas causas, mismas recomendaciones y mismos "no concluyente" que antes del
+  cambio, en las 25 operaciones del conjunto de evaluación (FR-009, FR-010).
 - **SC-005**: Pedir **5 veces** el diagnóstico de cada operación del conjunto de evaluación da la misma
   evidencia de la recomendación las 5 veces en el **100 %** de las operaciones.
-- **SC-006**: Los tiempos de respuesta de 001 (SC-005 y SC-006 de 001, ≤ 2 segundos en al menos el
-  95 % de 125 mediciones) se siguen cumpliendo con el campo nuevo.
+- **SC-006**: Los tiempos de respuesta de 001 (001/SC-005 para el diagnóstico y 001/SC-006 para el
+  trace: ≤ 2 segundos en al menos el 95 % de 125 mediciones cada uno) se siguen cumpliendo con el campo
+  nuevo.
 
 ## Assumptions
 
@@ -279,5 +280,8 @@ prueba de plazo, archivo de casos borde, hora de referencia) siguen como en 001.
   casos borde con datos fijos, y es una decisión explícita (Clarifications, sesión 2026-11-22).
 - El campo se llama "evidencia de la recomendación" en el lenguaje del analista; su nombre exacto en la
   respuesta se decide en el plan.
-- La constitución no cambia: el principio I habla de la evidencia de la causa, que sigue igual; la
-  evidencia de la recomendación aplica el mismo criterio ("evidencia o nada") a la recomendación.
+- La constitución no cambia: el principio I habla de la evidencia de la causa, que sigue igual. La
+  evidencia de la recomendación cita un evento solo cuando el trace lo tiene, y nunca inventa uno; la
+  recomendación sigue siendo la de 001 aunque la evidencia esté vacía (por ejemplo, en "cuenta
+  incorrecta" sin reversa posterior, historia 1, escenario 4). A diferencia de "timeout", en "cuenta
+  incorrecta" la recomendación no depende de que haya una reversa.

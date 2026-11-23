@@ -109,14 +109,19 @@ decisiones propias del campo nuevo. Las referencias "001/R-x" remiten a esa inve
       recomendación es la de "sin reversa", como en 001.
     - FR-006: 0 claves con reversa (como OP-0028) y > 1 claves con reversa (como OP-0029) → `()`.
     - FR-011: mismo resultado en llamadas repetidas.
-  - `tests/api/test_evidencia_recomendacion.py` (archivo de tests nuevo; `app/` no suma módulos):
-    historias 1 a 3 de punta a punta sobre los datos fijos. SC-001 (las 10 con un ID: `OP-0006-E4`…
-    `OP-0010-E4`, `OP-0011-E5`…`OP-0015-E5`), SC-002 (las 15 + OP-0028 a OP-0030 con `[]`), SC-003
-    (una OK cargada en el repositorio del test, OP-0026 y OP-0027 sin la clave), SC-005 (5 pedidos por
-    operación). También el escenario 3 de la historia 1: el ID de la reversa no está en
-    `eventos_citados`.
+  - `tests/api/test_evidencia_recomendacion.py` (archivo de tests nuevo; `app/` no suma módulos; los
+    tests llevan el prefijo `test_002_` para no confundirse con los de 001): historias 1 y 2 de punta
+    a punta sobre los datos fijos. SC-001 (las 10 con un ID: `OP-0006-E4`… `OP-0010-E4`,
+    `OP-0011-E5`…`OP-0015-E5`), SC-002 (las 15 + OP-0028 a OP-0030 con `[]`) y la recomendación de las
+    25, igual a la de 001 (FR-010, SC-004). También el escenario 3 de la historia 1: el ID de la
+    reversa no está en `eventos_citados`, afirmando primero que la evidencia no está vacía para que el
+    test se vea fallar.
   - Sin cambios: `test_reglas_aislamiento.py` (sigue verificando que `app/diagnostico` es puro),
-    `test_conjunto_evaluacion.py` (SC-004: causas y citas de 001 iguales) y `test_tiempos.py` (SC-006).
+    `test_conjunto_evaluacion.py` (SC-004: causas y citas de 001 iguales; SC-005: los `test_sc007_*`
+    comparan el cuerpo completo 5 veces para las 25), `test_h2_sin_respaldo.py` en sus escenarios
+    `sin_fallo` y `en_curso` y `test_h4_generacion.py` (SC-003 y la historia 3: comparan el cuerpo
+    exacto, sin la clave), y `test_tiempos.py` (SC-006). No se escriben tests nuevos para SC-003 y
+    SC-005: ya se cumplen sin implementación nueva, así que pasarían sin verse fallar (principio III).
 - **Razón**: igual que en 001 (001/R11), las reglas se prueban con traces armados y la API con los
   datos fijos. Los escenarios 4 y 5 solo existen como traces armados (FR-013).
 - **Alternativas**: un archivo `test_reglas_evidencia.py` aparte; se descarta porque reutiliza el

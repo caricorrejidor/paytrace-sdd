@@ -87,6 +87,10 @@ discriminadas por `tipo`:
 {"tipo": "en_curso", "mensaje": "La operación sigue en curso"}
 ```
 
+> **Ampliado por la feature 002**: las respuestas con `"tipo": "diagnostico"` suman la clave
+> `evidencia_recomendacion`. Ver
+> [specs/002-evidencia-recomendacion/contracts/api.md](../../002-evidencia-recomendacion/contracts/api.md).
+
 Garantías del contrato:
 
 - Si `causa` no es "no concluyente", `eventos_citados` tiene exactamente un ID, y es el de un

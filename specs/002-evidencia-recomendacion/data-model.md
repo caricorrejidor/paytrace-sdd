@@ -43,8 +43,8 @@ trace, en el orden del trace ([research R4](./research.md#r4-regla-de-la-evidenc
 
 | Operaciones | `evidencia_recomendacion` |
 |---|---|
-| OP-0006 a OP-0010 (cuenta incorrecta) | `["OP-000n-E4"]` (la reversa, 4.º evento) |
-| OP-0011 a OP-0015 (timeout con reversa) | `["OP-00nn-E5"]` (la reversa, 5.º evento) |
+| OP-0006 a OP-0010 (cuenta incorrecta) | `["OP-0006-E4"]` … `["OP-0010-E4"]` (la reversa, 4.º evento) |
+| OP-0011 a OP-0015 (timeout con reversa) | `["OP-0011-E5"]` … `["OP-0015-E5"]` (la reversa, 5.º evento) |
 | OP-0001 a OP-0005, OP-0016 a OP-0025 | `[]` |
 | OP-0028 a OP-0030 (casos borde) | `[]` (OP-0028 y OP-0029 tienen reversa, pero son "no concluyente") |
 | OP-0026, OP-0027 (en curso) y una OK | la respuesta no tiene la clave |
