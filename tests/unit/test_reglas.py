@@ -303,3 +303,59 @@ def test_002_cinco_llamadas_dan_la_misma_evidencia(pasos):
     assert resultados[0] == Diagnostico(
         "cuenta incorrecta", (eventos[-1].id,), CUENTA_INCORRECTA, ()
     )
+
+
+def test_002_ac01_con_dos_reversas_cita_las_dos_en_orden():
+    """002, historia 1, escenario 5 (FR-002, FR-003, FR-012): las dos reversas posteriores, en el
+    orden del trace. No es evidencia contradictoria."""
+    eventos = trace(ORDEN, DEBITO, AC01, REVERSA, REVERSA)
+
+    resultado = diagnosticar(Estado.FALLIDA, eventos, despues_del_ultimo(eventos, minutes=5))
+
+    assert resultado == Diagnostico(
+        "cuenta incorrecta", ("OP-0100-E3",), CUENTA_INCORRECTA, ("OP-0100-E4", "OP-0100-E5")
+    )
+
+
+def test_002_ab05_con_dos_reversas_cita_las_dos_en_orden():
+    """002/FR-004, FR-012: timeout con dos reversas posteriores cita las dos, en orden."""
+    eventos = trace(ORDEN, DEBITO, ENVIO, AB05, REVERSA, REVERSA)
+
+    resultado = diagnosticar(Estado.FALLIDA, eventos, despues_del_ultimo(eventos, minutes=5))
+
+    assert resultado == Diagnostico(
+        "timeout",
+        ("OP-0100-E4",),
+        "El débito ya se devolvió: se puede reintentar la transferencia",
+        ("OP-0100-E5", "OP-0100-E6"),
+    )
+
+
+def test_002_reversa_anterior_al_ac01_no_cuenta():
+    """002/FR-008: de una reversa anterior y otra posterior al evento clave, solo cuenta la posterior."""
+    eventos = trace(ORDEN, DEBITO, REVERSA, AC01, REVERSA)
+
+    resultado = diagnosticar(Estado.FALLIDA, eventos, despues_del_ultimo(eventos, minutes=5))
+
+    assert resultado == Diagnostico(
+        "cuenta incorrecta", ("OP-0100-E4",), CUENTA_INCORRECTA, ("OP-0100-E5",)
+    )
+
+
+@pytest.mark.parametrize(
+    "pasos",
+    [
+        (ORDEN, DEBITO, AC01, REVERSA, REVERSA),
+        (ORDEN, DEBITO, ENVIO, AB05, REVERSA, REVERSA),
+        (ORDEN, DEBITO, REVERSA, AC01, REVERSA),
+    ],
+    ids=["AC01 con dos reversas", "AB05 con dos reversas", "AC01 con reversa anterior y posterior"],
+)
+def test_002_la_reversa_nunca_esta_en_los_eventos_citados(pasos):
+    """002/FR-009: la reversa va en la evidencia de la recomendación, nunca en los eventos citados."""
+    eventos = trace(*pasos)
+
+    resultado = diagnosticar(Estado.FALLIDA, eventos, despues_del_ultimo(eventos, minutes=5))
+
+    assert resultado.evidencia_recomendacion != ()
+    assert set(resultado.eventos_citados) & set(resultado.evidencia_recomendacion) == set()
