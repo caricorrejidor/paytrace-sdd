@@ -79,18 +79,23 @@ def _con_un_evento_clave(clave: Evento, eventos: Sequence[Evento]) -> Diagnostic
             textos.CAUSA_CUENTA_INCORRECTA,
             (clave.id,),
             textos.RECOMENDACION_CUENTA_INCORRECTA,
-            (),  # vacía por ahora: las reversas llegan con la historia 1 de la 002 (T010)
+            _reversas_posteriores(clave, eventos),  # 002/FR-003
         )
-    # AB05: la recomendación depende de si hay una reversa del débito después del rechazo.
-    posicion = list(eventos).index(clave)
-    hay_reversa_posterior = any(
-        e.tipo is TipoEvento.REVERSA_DEBITO for e in eventos[posicion + 1 :]
-    )
+    # AB05: la recomendación y su evidencia salen del mismo cálculo, así no se contradicen
+    # (001/FR-020, 002/FR-004, FR-005).
+    reversas = _reversas_posteriores(clave, eventos)
     return Diagnostico(
         textos.CAUSA_TIMEOUT,
         (clave.id,),
         textos.RECOMENDACION_TIMEOUT_CON_REVERSA
-        if hay_reversa_posterior
+        if reversas
         else textos.RECOMENDACION_TIMEOUT_SIN_REVERSA,
-        (),  # vacía por ahora: las reversas llegan con la historia 1 de la 002 (T010)
+        reversas,
     )
+
+
+def _reversas_posteriores(clave: Evento, eventos: Sequence[Evento]) -> tuple[str, ...]:
+    """IDs de las reversas del débito que están después del evento clave en el trace, en el orden
+    del trace (002/FR-002, FR-008; research R4). Una reversa anterior no cuenta."""
+    posicion = list(eventos).index(clave)
+    return tuple(e.id for e in eventos[posicion + 1 :] if e.tipo is TipoEvento.REVERSA_DEBITO)

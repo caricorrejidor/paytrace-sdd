@@ -143,7 +143,7 @@ es exactamente la reversa del débito de cada trace (`OP-0006-E4` … `OP-0010-E
 
 ### Implementación de la Historia 1
 
-- [ ] T010 [US1] Implementar en `app/diagnostico/reglas.py` la función privada `_reversas_posteriores(clave, eventos) -> tuple[str, ...]` (IDs de los `reversa_debito` que están después de la posición de `clave` en el trace, en el orden del trace; research R4) y usarla en `_con_un_evento_clave()`: AC01 → evidencia = reversas; AB05 → evidencia = reversas, y la recomendación "con reversa" si `reversas` no está vacía (reemplaza el `any(...)` actual por el mismo cálculo). AM04 y las ramas "no concluyente" siguen en `()`. Depende de T008 y T009. **Terminada cuando**: `uv run pytest` pasa completo, incluidos los dos tests de T001 que quedaban en rojo, `test_reglas_aislamiento.py`, `test_conjunto_evaluacion.py` (SC-004 y SC-005) y `test_002_sc004_recomendacion_de_001`.
+- [X] T010 [US1] Implementar en `app/diagnostico/reglas.py` la función privada `_reversas_posteriores(clave, eventos) -> tuple[str, ...]` (IDs de los `reversa_debito` que están después de la posición de `clave` en el trace, en el orden del trace; research R4) y usarla en `_con_un_evento_clave()`: AC01 → evidencia = reversas; AB05 → evidencia = reversas, y la recomendación "con reversa" si `reversas` no está vacía (reemplaza el `any(...)` actual por el mismo cálculo). AM04 y las ramas "no concluyente" siguen en `()`. Depende de T008 y T009. **Terminada cuando**: `uv run pytest` pasa completo, incluidos los dos tests de T001 que quedaban en rojo, `test_reglas_aislamiento.py`, `test_conjunto_evaluacion.py` (SC-004 y SC-005) y `test_002_sc004_recomendacion_de_001`.
 
 **Checkpoint**: historias 1 y 2 completas; suite completa en verde. Es el MVP de la feature.
 
