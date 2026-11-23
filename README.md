@@ -26,7 +26,7 @@ Detalle completo en [contracts/api.md](specs/001-diagnostico-transferencias/cont
 | `GET` | `/operaciones` | Lista todas las operaciones por ID ascendente |
 | `GET` | `/busqueda?id={texto}` | Busca una operación por ID |
 | `GET` | `/operaciones/{id}` | Abre una operación con su trace |
-| `GET` | `/operaciones/{id}/diagnostico` | Diagnostica la operación: causa (o "no concluyente"), eventos citados y recomendación |
+| `GET` | `/operaciones/{id}/diagnostico` | Diagnostica la operación: causa (o "no concluyente"), eventos citados, recomendación y `evidencia_recomendacion` |
 
 ## Cómo se construyó
 
@@ -40,12 +40,20 @@ el plan y las tareas, y recién entonces el código.
 | Plan | [plan.md](specs/001-diagnostico-transferencias/plan.md) |
 | Tareas | [tasks.md](specs/001-diagnostico-transferencias/tasks.md) |
 
+La feature 002 (evidencia de la recomendación) salió de la devolución del profe a la v2.
+
+| Artefacto | Archivo |
+|---|---|
+| Especificación | [spec.md](specs/002-evidencia-recomendacion/spec.md) |
+| Plan | [plan.md](specs/002-evidencia-recomendacion/plan.md) |
+| Tareas | [tasks.md](specs/002-evidencia-recomendacion/tasks.md) |
+
 ## Números
 
 | | |
 |---|---|
-| Tareas | 57 |
-| Tests | 292 |
+| Tareas | 69 (57 de la 001 y 12 de la 002) |
+| Tests | 376 |
 | Commits | Uno por tarea |
 | Test-first | Verificable en el historial: los tests entran en un commit `test` en rojo, antes de la implementación que los pone en verde (excepto T054 y T055, verificaciones transversales; ver tasks.md) |
 
