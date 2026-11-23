@@ -49,6 +49,7 @@ def diagnosticar(
             textos.CAUSA_NO_CONCLUYENTE,
             tuple(e.id for e in claves),
             textos.RECOMENDACION_EVIDENCIA_CONTRADICTORIA,
+            (),  # 002/FR-006: sin evidencia de la recomendación
         )
 
     # Ninguno: no concluyente, sin causa y sin citas (FR-021).
@@ -57,6 +58,7 @@ def diagnosticar(
             textos.CAUSA_NO_CONCLUYENTE,
             (),
             textos.RECOMENDACION_SIN_EVENTO_CLAVE,
+            (),  # 002/FR-006: sin evidencia de la recomendación
         )
 
     # Exactamente uno: la única rama que nombra una causa (constitución I).
@@ -70,12 +72,14 @@ def _con_un_evento_clave(clave: Evento, eventos: Sequence[Evento]) -> Diagnostic
             textos.CAUSA_FONDOS_INSUFICIENTES,
             (clave.id,),
             textos.RECOMENDACION_FONDOS_INSUFICIENTES,
+            (),  # 002/FR-005
         )
     if clave.codigo is CodigoMotivo.AC01:
         return Diagnostico(
             textos.CAUSA_CUENTA_INCORRECTA,
             (clave.id,),
             textos.RECOMENDACION_CUENTA_INCORRECTA,
+            (),  # vacía por ahora: las reversas llegan con la historia 1 de la 002 (T010)
         )
     # AB05: la recomendación depende de si hay una reversa del débito después del rechazo.
     posicion = list(eventos).index(clave)
@@ -88,4 +92,5 @@ def _con_un_evento_clave(clave: Evento, eventos: Sequence[Evento]) -> Diagnostic
         textos.RECOMENDACION_TIMEOUT_CON_REVERSA
         if hay_reversa_posterior
         else textos.RECOMENDACION_TIMEOUT_SIN_REVERSA,
+        (),  # vacía por ahora: las reversas llegan con la historia 1 de la 002 (T010)
     )
