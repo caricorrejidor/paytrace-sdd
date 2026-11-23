@@ -44,6 +44,7 @@ def test_h2_e1_trace_incompleto_es_no_concluyente(cliente):
         "causa": "no concluyente",
         "eventos_citados": [],
         "recomendacion": SIN_CLAVE,
+        "evidencia_recomendacion": [],
     }
 
 
@@ -87,6 +88,7 @@ def test_h2_e5_fallida_sin_evento_clave_es_no_concluyente(cliente):
         "causa": "no concluyente",
         "eventos_citados": [],
         "recomendacion": SIN_CLAVE,
+        "evidencia_recomendacion": [],
     }
 
 
@@ -100,6 +102,7 @@ def test_h2_e6_dos_eventos_clave_distintos_es_evidencia_contradictoria(cliente):
         "causa": "no concluyente",
         "eventos_citados": ["OP-0029-E3", "OP-0029-E4"],
         "recomendacion": CONTRADICTORIA,
+        "evidencia_recomendacion": [],
     }
 
 
@@ -113,6 +116,7 @@ def test_h2_e7_dos_ab05_es_evidencia_contradictoria(cliente):
         "causa": "no concluyente",
         "eventos_citados": ["OP-0030-E4", "OP-0030-E5"],
         "recomendacion": CONTRADICTORIA,
+        "evidencia_recomendacion": [],
     }
 
 
@@ -131,4 +135,5 @@ def test_generada_usa_la_hora_del_pedido_como_hora_de_referencia(cliente, reposi
         "causa": "no concluyente",
         "eventos_citados": [],
         "recomendacion": SIN_CLAVE,
+        "evidencia_recomendacion": [],
     }

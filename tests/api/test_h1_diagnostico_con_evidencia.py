@@ -1,6 +1,6 @@
 """Historia 1: diagnosticar una operación fallida con evidencia (spec, escenarios 1 a 4; AC-06, AC-07, AC-08)."""
 
-CLAVES_DIAGNOSTICO = {"tipo", "causa", "eventos_citados", "recomendacion"}
+CLAVES_DIAGNOSTICO = {"tipo", "causa", "eventos_citados", "recomendacion", "evidencia_recomendacion"}
 
 
 def _diagnostico(cliente, id_operacion):

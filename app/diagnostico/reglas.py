@@ -49,6 +49,7 @@ def diagnosticar(
             textos.CAUSA_NO_CONCLUYENTE,
             tuple(e.id for e in claves),
             textos.RECOMENDACION_EVIDENCIA_CONTRADICTORIA,
+            (),  # 002/FR-006: sin evidencia de la recomendación
         )
 
     # Ninguno: no concluyente, sin causa y sin citas (FR-021).
@@ -57,6 +58,7 @@ def diagnosticar(
             textos.CAUSA_NO_CONCLUYENTE,
             (),
             textos.RECOMENDACION_SIN_EVENTO_CLAVE,
+            (),  # 002/FR-006: sin evidencia de la recomendación
         )
 
     # Exactamente uno: la única rama que nombra una causa (constitución I).
@@ -70,22 +72,30 @@ def _con_un_evento_clave(clave: Evento, eventos: Sequence[Evento]) -> Diagnostic
             textos.CAUSA_FONDOS_INSUFICIENTES,
             (clave.id,),
             textos.RECOMENDACION_FONDOS_INSUFICIENTES,
+            (),  # 002/FR-005
         )
     if clave.codigo is CodigoMotivo.AC01:
         return Diagnostico(
             textos.CAUSA_CUENTA_INCORRECTA,
             (clave.id,),
             textos.RECOMENDACION_CUENTA_INCORRECTA,
+            _reversas_posteriores(clave, eventos),  # 002/FR-003
         )
-    # AB05: la recomendación depende de si hay una reversa del débito después del rechazo.
-    posicion = list(eventos).index(clave)
-    hay_reversa_posterior = any(
-        e.tipo is TipoEvento.REVERSA_DEBITO for e in eventos[posicion + 1 :]
-    )
+    # AB05: la recomendación y su evidencia salen del mismo cálculo, así no se contradicen
+    # (001/FR-020, 002/FR-004, FR-005).
+    reversas = _reversas_posteriores(clave, eventos)
     return Diagnostico(
         textos.CAUSA_TIMEOUT,
         (clave.id,),
         textos.RECOMENDACION_TIMEOUT_CON_REVERSA
-        if hay_reversa_posterior
+        if reversas
         else textos.RECOMENDACION_TIMEOUT_SIN_REVERSA,
+        reversas,
     )
+
+
+def _reversas_posteriores(clave: Evento, eventos: Sequence[Evento]) -> tuple[str, ...]:
+    """IDs de las reversas del débito que están después del evento clave en el trace, en el orden
+    del trace (002/FR-002, FR-008; research R4). Una reversa anterior no cuenta."""
+    posicion = list(eventos).index(clave)
+    return tuple(e.id for e in eventos[posicion + 1 :] if e.tipo is TipoEvento.REVERSA_DEBITO)

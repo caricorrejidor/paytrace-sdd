@@ -54,6 +54,7 @@ class DiagnosticoSalida(BaseModel):
     causa: str
     eventos_citados: list[str]
     recomendacion: str
+    evidencia_recomendacion: list[str]  # 002/FR-001: siempre presente, puede ser []
 
 
 class SinFalloSalida(BaseModel):

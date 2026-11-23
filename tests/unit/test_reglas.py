@@ -50,6 +50,7 @@ def test_am04_es_fondos_insuficientes_y_cita_el_rechazo():
         "fondos insuficientes",
         ("OP-0100-E2",),
         "Avisar al cliente que no tenía saldo. No se debitó nada",
+        (),
     )
 
 
@@ -62,6 +63,7 @@ def test_ac01_es_cuenta_incorrecta_y_cita_el_rechazo():
         "cuenta incorrecta",
         ("OP-0100-E3",),
         "Pedir al cliente que verifique el CBU/CVU y confirmar que la reversa se acreditó",
+        ("OP-0100-E4",),
     )
 
 
@@ -74,6 +76,7 @@ def test_ab05_con_reversa_posterior_es_timeout_con_reintento():
         "timeout",
         ("OP-0100-E4",),
         "El débito ya se devolvió: se puede reintentar la transferencia",
+        ("OP-0100-E5",),
     )
 
 
@@ -87,6 +90,7 @@ def test_ab05_sin_reversa_es_timeout_pidiendo_la_reversa():
         ("OP-0100-E4",),
         "El débito todavía no se devolvió: pedir la reversa antes de reintentar. "
         "Si se reintenta antes, se cobra dos veces",
+        (),
     )
 
 
@@ -101,6 +105,7 @@ def test_ab05_con_reversa_anterior_al_rechazo_cuenta_como_sin_reversa():
         ("OP-0100-E5",),
         "El débito todavía no se devolvió: pedir la reversa antes de reintentar. "
         "Si se reintenta antes, se cobra dos veces",
+        (),
     )
 
 
@@ -137,7 +142,7 @@ ACREDITACION = (TipoEvento.ACREDITACION_DESTINO, None)
 SIN_FALLO = SinFallo("La operación no tiene un fallo para investigar")
 EN_CURSO = EnCurso("La operación sigue en curso")
 NO_CONCLUYENTE_SIN_CLAVE = Diagnostico(
-    "no concluyente", (), "Pedir los logs del proveedor desde el último evento conocido"
+    "no concluyente", (), "Pedir los logs del proveedor desde el último evento conocido", ()
 )
 CONTRADICTORIA = "Evidencia contradictoria: revisar manualmente los eventos citados"
 
@@ -204,7 +209,7 @@ def test_ac01_y_ab05_es_evidencia_contradictoria_citando_los_dos():
 
     resultado = diagnosticar(Estado.FALLIDA, eventos, despues_del_ultimo(eventos, minutes=5))
 
-    assert resultado == Diagnostico("no concluyente", ("OP-0100-E3", "OP-0100-E4"), CONTRADICTORIA)
+    assert resultado == Diagnostico("no concluyente", ("OP-0100-E3", "OP-0100-E4"), CONTRADICTORIA, ())
 
 
 def test_dos_ab05_es_evidencia_contradictoria_y_no_timeout():
@@ -212,7 +217,7 @@ def test_dos_ab05_es_evidencia_contradictoria_y_no_timeout():
 
     resultado = diagnosticar(Estado.FALLIDA, eventos, despues_del_ultimo(eventos, minutes=5))
 
-    assert resultado == Diagnostico("no concluyente", ("OP-0100-E4", "OP-0100-E5"), CONTRADICTORIA)
+    assert resultado == Diagnostico("no concluyente", ("OP-0100-E4", "OP-0100-E5"), CONTRADICTORIA, ())
 
 
 def test_tres_eventos_clave_cita_los_tres_en_orden_del_trace():
@@ -221,7 +226,7 @@ def test_tres_eventos_clave_cita_los_tres_en_orden_del_trace():
     resultado = diagnosticar(Estado.FALLIDA, eventos, despues_del_ultimo(eventos, minutes=5))
 
     assert resultado == Diagnostico(
-        "no concluyente", ("OP-0100-E2", "OP-0100-E3", "OP-0100-E4"), CONTRADICTORIA
+        "no concluyente", ("OP-0100-E2", "OP-0100-E3", "OP-0100-E4"), CONTRADICTORIA, ()
     )
 
 
@@ -244,3 +249,113 @@ def test_cinco_llamadas_iguales_dan_el_mismo_resultado_sin_causa(estado, pasos, 
     resultados = [diagnosticar(estado, eventos, hora) for _ in range(5)]
 
     assert all(r == resultados[0] for r in resultados)
+
+
+# --- Evidencia de la recomendación (feature 002) ----------------------------
+# Spec specs/002-evidencia-recomendacion: el cuarto campo de Diagnostico.
+
+CUENTA_INCORRECTA = "Pedir al cliente que verifique el CBU/CVU y confirmar que la reversa se acreditó"
+
+
+def test_002_ac01_sin_reversa_tiene_evidencia_vacia():
+    """002, historia 1, escenario 4 (FR-003): sin reversa posterior, misma causa, cita y
+    recomendación de 001, y la evidencia de la recomendación vacía."""
+    eventos = trace(ORDEN, DEBITO, AC01)
+
+    resultado = diagnosticar(Estado.FALLIDA, eventos, despues_del_ultimo(eventos, minutes=5))
+
+    assert resultado == Diagnostico("cuenta incorrecta", ("OP-0100-E3",), CUENTA_INCORRECTA, ())
+
+
+def test_002_ac01_con_reversa_anterior_tiene_evidencia_vacia():
+    """002/FR-008: una reversa del débito anterior al evento clave no cuenta como evidencia."""
+    eventos = trace(ORDEN, DEBITO, REVERSA, AC01)
+
+    resultado = diagnosticar(Estado.FALLIDA, eventos, despues_del_ultimo(eventos, minutes=5))
+
+    assert resultado == Diagnostico("cuenta incorrecta", ("OP-0100-E4",), CUENTA_INCORRECTA, ())
+
+
+def test_002_pendiente_vencida_con_reversa_tiene_evidencia_vacia():
+    """002/FR-006: en "no concluyente" la evidencia va vacía aunque el trace tenga una reversa."""
+    eventos = trace(ORDEN, DEBITO, REVERSA)
+
+    resultado = diagnosticar(Estado.PENDIENTE, eventos, despues_del_ultimo(eventos, minutes=15))
+
+    assert resultado == Diagnostico(
+        "no concluyente", (), "Pedir los logs del proveedor desde el último evento conocido", ()
+    )
+
+
+@pytest.mark.parametrize(
+    "pasos",
+    [(ORDEN, DEBITO, AC01), (ORDEN, DEBITO, REVERSA, AC01)],
+    ids=["AC01 sin reversa", "AC01 con reversa anterior"],
+)
+def test_002_cinco_llamadas_dan_la_misma_evidencia(pasos):
+    """002/FR-011: la misma entrada da siempre la misma evidencia de la recomendación."""
+    eventos = trace(*pasos)
+    hora = despues_del_ultimo(eventos, minutes=5)
+
+    resultados = [diagnosticar(Estado.FALLIDA, eventos, hora) for _ in range(5)]
+
+    assert all(r == resultados[0] for r in resultados)
+    assert resultados[0] == Diagnostico(
+        "cuenta incorrecta", (eventos[-1].id,), CUENTA_INCORRECTA, ()
+    )
+
+
+def test_002_ac01_con_dos_reversas_cita_las_dos_en_orden():
+    """002, historia 1, escenario 5 (FR-002, FR-003, FR-012): las dos reversas posteriores, en el
+    orden del trace. No es evidencia contradictoria."""
+    eventos = trace(ORDEN, DEBITO, AC01, REVERSA, REVERSA)
+
+    resultado = diagnosticar(Estado.FALLIDA, eventos, despues_del_ultimo(eventos, minutes=5))
+
+    assert resultado == Diagnostico(
+        "cuenta incorrecta", ("OP-0100-E3",), CUENTA_INCORRECTA, ("OP-0100-E4", "OP-0100-E5")
+    )
+
+
+def test_002_ab05_con_dos_reversas_cita_las_dos_en_orden():
+    """002/FR-004, FR-012: timeout con dos reversas posteriores cita las dos, en orden."""
+    eventos = trace(ORDEN, DEBITO, ENVIO, AB05, REVERSA, REVERSA)
+
+    resultado = diagnosticar(Estado.FALLIDA, eventos, despues_del_ultimo(eventos, minutes=5))
+
+    assert resultado == Diagnostico(
+        "timeout",
+        ("OP-0100-E4",),
+        "El débito ya se devolvió: se puede reintentar la transferencia",
+        ("OP-0100-E5", "OP-0100-E6"),
+    )
+
+
+def test_002_reversa_anterior_al_ac01_no_cuenta():
+    """002/FR-008: de una reversa anterior y otra posterior al evento clave, solo cuenta la posterior."""
+    eventos = trace(ORDEN, DEBITO, REVERSA, AC01, REVERSA)
+
+    resultado = diagnosticar(Estado.FALLIDA, eventos, despues_del_ultimo(eventos, minutes=5))
+
+    assert resultado == Diagnostico(
+        "cuenta incorrecta", ("OP-0100-E4",), CUENTA_INCORRECTA, ("OP-0100-E5",)
+    )
+
+
+@pytest.mark.parametrize(
+    "pasos",
+    [
+        (ORDEN, DEBITO, AC01, REVERSA, REVERSA),
+        (ORDEN, DEBITO, ENVIO, AB05, REVERSA, REVERSA),
+        (ORDEN, DEBITO, REVERSA, AC01, REVERSA),
+    ],
+    ids=["AC01 con dos reversas", "AB05 con dos reversas", "AC01 con reversa anterior y posterior"],
+)
+def test_002_la_reversa_nunca_esta_en_los_eventos_citados(pasos):
+    """002/FR-009: la reversa va en la evidencia de la recomendación, nunca en los eventos citados."""
+    eventos = trace(*pasos)
+
+    resultado = diagnosticar(Estado.FALLIDA, eventos, despues_del_ultimo(eventos, minutes=5))
+
+    assert resultado.evidencia_recomendacion != ()
+    assert set(resultado.eventos_citados) & set(resultado.evidencia_recomendacion) == set()

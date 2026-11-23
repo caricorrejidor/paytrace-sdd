@@ -2,5 +2,5 @@
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan at specs/001-diagnostico-transferencias/plan.md
+shell commands, and other important information, read the current plan at specs/002-evidencia-recomendacion/plan.md
 <!-- SPECKIT END -->

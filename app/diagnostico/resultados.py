@@ -5,11 +5,13 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Diagnostico:
-    """Causa, eventos citados por ID y recomendación (FR-017)."""
+    """Causa, eventos citados por ID, recomendación (001/FR-017) y evidencia de la recomendación
+    por ID (002/FR-001). La evidencia no tiene valor por defecto: cada regla la decide."""
 
     causa: str
     eventos_citados: tuple[str, ...]
     recomendacion: str
+    evidencia_recomendacion: tuple[str, ...]
 
 
 @dataclass(frozen=True)
