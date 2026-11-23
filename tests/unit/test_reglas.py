@@ -50,6 +50,7 @@ def test_am04_es_fondos_insuficientes_y_cita_el_rechazo():
         "fondos insuficientes",
         ("OP-0100-E2",),
         "Avisar al cliente que no tenía saldo. No se debitó nada",
+        (),
     )
 
 
@@ -62,6 +63,7 @@ def test_ac01_es_cuenta_incorrecta_y_cita_el_rechazo():
         "cuenta incorrecta",
         ("OP-0100-E3",),
         "Pedir al cliente que verifique el CBU/CVU y confirmar que la reversa se acreditó",
+        ("OP-0100-E4",),
     )
 
 
@@ -74,6 +76,7 @@ def test_ab05_con_reversa_posterior_es_timeout_con_reintento():
         "timeout",
         ("OP-0100-E4",),
         "El débito ya se devolvió: se puede reintentar la transferencia",
+        ("OP-0100-E5",),
     )
 
 
@@ -87,6 +90,7 @@ def test_ab05_sin_reversa_es_timeout_pidiendo_la_reversa():
         ("OP-0100-E4",),
         "El débito todavía no se devolvió: pedir la reversa antes de reintentar. "
         "Si se reintenta antes, se cobra dos veces",
+        (),
     )
 
 
@@ -101,6 +105,7 @@ def test_ab05_con_reversa_anterior_al_rechazo_cuenta_como_sin_reversa():
         ("OP-0100-E5",),
         "El débito todavía no se devolvió: pedir la reversa antes de reintentar. "
         "Si se reintenta antes, se cobra dos veces",
+        (),
     )
 
 
@@ -137,7 +142,7 @@ ACREDITACION = (TipoEvento.ACREDITACION_DESTINO, None)
 SIN_FALLO = SinFallo("La operación no tiene un fallo para investigar")
 EN_CURSO = EnCurso("La operación sigue en curso")
 NO_CONCLUYENTE_SIN_CLAVE = Diagnostico(
-    "no concluyente", (), "Pedir los logs del proveedor desde el último evento conocido"
+    "no concluyente", (), "Pedir los logs del proveedor desde el último evento conocido", ()
 )
 CONTRADICTORIA = "Evidencia contradictoria: revisar manualmente los eventos citados"
 
@@ -204,7 +209,7 @@ def test_ac01_y_ab05_es_evidencia_contradictoria_citando_los_dos():
 
     resultado = diagnosticar(Estado.FALLIDA, eventos, despues_del_ultimo(eventos, minutes=5))
 
-    assert resultado == Diagnostico("no concluyente", ("OP-0100-E3", "OP-0100-E4"), CONTRADICTORIA)
+    assert resultado == Diagnostico("no concluyente", ("OP-0100-E3", "OP-0100-E4"), CONTRADICTORIA, ())
 
 
 def test_dos_ab05_es_evidencia_contradictoria_y_no_timeout():
@@ -212,7 +217,7 @@ def test_dos_ab05_es_evidencia_contradictoria_y_no_timeout():
 
     resultado = diagnosticar(Estado.FALLIDA, eventos, despues_del_ultimo(eventos, minutes=5))
 
-    assert resultado == Diagnostico("no concluyente", ("OP-0100-E4", "OP-0100-E5"), CONTRADICTORIA)
+    assert resultado == Diagnostico("no concluyente", ("OP-0100-E4", "OP-0100-E5"), CONTRADICTORIA, ())
 
 
 def test_tres_eventos_clave_cita_los_tres_en_orden_del_trace():
@@ -221,7 +226,7 @@ def test_tres_eventos_clave_cita_los_tres_en_orden_del_trace():
     resultado = diagnosticar(Estado.FALLIDA, eventos, despues_del_ultimo(eventos, minutes=5))
 
     assert resultado == Diagnostico(
-        "no concluyente", ("OP-0100-E2", "OP-0100-E3", "OP-0100-E4"), CONTRADICTORIA
+        "no concluyente", ("OP-0100-E2", "OP-0100-E3", "OP-0100-E4"), CONTRADICTORIA, ()
     )
 
 
