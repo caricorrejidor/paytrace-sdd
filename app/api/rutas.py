@@ -94,9 +94,17 @@ def abrir_operacion(id: str, repositorio: RepositorioDep) -> OperacionDetalle:
 
 def _a_salida(resultado: Resultado) -> DiagnosticoSalida | SinFalloSalida | EnCursoSalida:
     match resultado:
-        case Diagnostico(causa=causa, eventos_citados=citados, recomendacion=recomendacion):
+        case Diagnostico(
+            causa=causa,
+            eventos_citados=citados,
+            recomendacion=recomendacion,
+            evidencia_recomendacion=evidencia,
+        ):
             return DiagnosticoSalida(
-                causa=causa, eventos_citados=list(citados), recomendacion=recomendacion
+                causa=causa,
+                eventos_citados=list(citados),
+                recomendacion=recomendacion,
+                evidencia_recomendacion=list(evidencia),
             )
         case SinFallo(mensaje=mensaje):
             return SinFalloSalida(mensaje=mensaje)
