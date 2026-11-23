@@ -249,3 +249,57 @@ def test_cinco_llamadas_iguales_dan_el_mismo_resultado_sin_causa(estado, pasos, 
     resultados = [diagnosticar(estado, eventos, hora) for _ in range(5)]
 
     assert all(r == resultados[0] for r in resultados)
+
+
+# --- Evidencia de la recomendación (feature 002) ----------------------------
+# Spec specs/002-evidencia-recomendacion: el cuarto campo de Diagnostico.
+
+CUENTA_INCORRECTA = "Pedir al cliente que verifique el CBU/CVU y confirmar que la reversa se acreditó"
+
+
+def test_002_ac01_sin_reversa_tiene_evidencia_vacia():
+    """002, historia 1, escenario 4 (FR-003): sin reversa posterior, misma causa, cita y
+    recomendación de 001, y la evidencia de la recomendación vacía."""
+    eventos = trace(ORDEN, DEBITO, AC01)
+
+    resultado = diagnosticar(Estado.FALLIDA, eventos, despues_del_ultimo(eventos, minutes=5))
+
+    assert resultado == Diagnostico("cuenta incorrecta", ("OP-0100-E3",), CUENTA_INCORRECTA, ())
+
+
+def test_002_ac01_con_reversa_anterior_tiene_evidencia_vacia():
+    """002/FR-008: una reversa del débito anterior al evento clave no cuenta como evidencia."""
+    eventos = trace(ORDEN, DEBITO, REVERSA, AC01)
+
+    resultado = diagnosticar(Estado.FALLIDA, eventos, despues_del_ultimo(eventos, minutes=5))
+
+    assert resultado == Diagnostico("cuenta incorrecta", ("OP-0100-E4",), CUENTA_INCORRECTA, ())
+
+
+def test_002_pendiente_vencida_con_reversa_tiene_evidencia_vacia():
+    """002/FR-006: en "no concluyente" la evidencia va vacía aunque el trace tenga una reversa."""
+    eventos = trace(ORDEN, DEBITO, REVERSA)
+
+    resultado = diagnosticar(Estado.PENDIENTE, eventos, despues_del_ultimo(eventos, minutes=15))
+
+    assert resultado == Diagnostico(
+        "no concluyente", (), "Pedir los logs del proveedor desde el último evento conocido", ()
+    )
+
+
+@pytest.mark.parametrize(
+    "pasos",
+    [(ORDEN, DEBITO, AC01), (ORDEN, DEBITO, REVERSA, AC01)],
+    ids=["AC01 sin reversa", "AC01 con reversa anterior"],
+)
+def test_002_cinco_llamadas_dan_la_misma_evidencia(pasos):
+    """002/FR-011: la misma entrada da siempre la misma evidencia de la recomendación."""
+    eventos = trace(*pasos)
+    hora = despues_del_ultimo(eventos, minutes=5)
+
+    resultados = [diagnosticar(Estado.FALLIDA, eventos, hora) for _ in range(5)]
+
+    assert all(r == resultados[0] for r in resultados)
+    assert resultados[0] == Diagnostico(
+        "cuenta incorrecta", (eventos[-1].id,), CUENTA_INCORRECTA, ()
+    )
