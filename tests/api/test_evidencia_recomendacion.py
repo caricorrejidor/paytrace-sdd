@@ -135,3 +135,77 @@ def test_002_sc004_recomendacion_de_001(cliente, repositorio, id_operacion):
     caso = repositorio.obtener(id_operacion).caso.value
 
     assert _diagnostico(cliente, id_operacion)["recomendacion"] == RECOMENDACION_POR_CASO[caso]
+
+
+# --- Historia 1: el evento que respalda la recomendación ---------------------------------------
+
+CON_REVERSA = [f"OP-{n:04d}" for n in range(6, 16)]
+
+
+def _reversas(cliente, id_operacion) -> list[str]:
+    """IDs de las reversas del débito del trace, tomados del trace que ve el analista."""
+    eventos = cliente.get(f"/operaciones/{id_operacion}").json()["eventos"]
+    return [e["id"] for e in eventos if e["tipo"] == "reversa_debito"]
+
+
+def test_002_h1_e1_cuenta_incorrecta_cita_la_reversa(cliente):
+    """Dado una operación del caso "cuenta incorrecta", Cuando el analista pide el diagnóstico,
+    Entonces la causa es "cuenta incorrecta", los eventos citados son exactamente el rechazo AC01, la
+    recomendación es la de 001 y la evidencia de la recomendación es exactamente la reversa del
+    débito posterior al evento clave."""
+    cuerpo = _diagnostico(cliente, "OP-0006")
+
+    assert cuerpo["causa"] == "cuenta incorrecta"
+    assert cuerpo["eventos_citados"] == ["OP-0006-E3"]
+    assert cuerpo["recomendacion"] == RECOMENDACION_POR_CASO["cuenta_incorrecta"]
+    assert cuerpo["evidencia_recomendacion"] == ["OP-0006-E4"]
+
+
+def test_002_h1_e2_timeout_con_reversa_cita_la_reversa(cliente):
+    """Dado una operación del caso "timeout con reversa", Cuando el analista pide el diagnóstico,
+    Entonces la causa es "timeout", los eventos citados son exactamente el rechazo AB05, la
+    recomendación es "El débito ya se devolvió: se puede reintentar la transferencia" y la evidencia
+    de la recomendación es exactamente la reversa del débito posterior al evento clave."""
+    cuerpo = _diagnostico(cliente, "OP-0011")
+
+    assert cuerpo["causa"] == "timeout"
+    assert cuerpo["eventos_citados"] == ["OP-0011-E4"]
+    assert cuerpo["recomendacion"] == RECOMENDACION_POR_CASO["timeout_con_reversa"]
+    assert cuerpo["evidencia_recomendacion"] == ["OP-0011-E5"]
+
+
+@pytest.mark.parametrize("id_operacion", CON_REVERSA)
+def test_002_h1_e3_la_reversa_no_esta_en_los_eventos_citados(cliente, id_operacion):
+    """Dado una operación de "cuenta incorrecta" o de "timeout con reversa", Cuando el analista pide
+    el diagnóstico, Entonces el ID de la reversa del débito aparece solo en la evidencia de la
+    recomendación y no en los eventos citados."""
+    cuerpo = _diagnostico(cliente, id_operacion)
+
+    assert cuerpo["evidencia_recomendacion"] != []
+    assert not set(cuerpo["evidencia_recomendacion"]) & set(cuerpo["eventos_citados"])
+
+
+@pytest.mark.parametrize("id_operacion", CON_REVERSA)
+def test_002_sc001_evidencia_es_la_reversa_posterior(cliente, id_operacion):
+    """SC-001: la evidencia es exactamente el ID de la reversa del débito, posterior al evento citado."""
+    cuerpo = _diagnostico(cliente, id_operacion)
+    eventos = cliente.get(f"/operaciones/{id_operacion}").json()["eventos"]
+    ids = [e["id"] for e in eventos]
+    reversas = _reversas(cliente, id_operacion)
+
+    assert len(reversas) == 1
+    assert cuerpo["evidencia_recomendacion"] == reversas
+    assert ids.index(reversas[0]) > ids.index(cuerpo["eventos_citados"][0])
+
+
+@pytest.mark.parametrize("caso", ["cuenta_incorrecta", "timeout_con_reversa"])
+def test_002_generadas_citan_su_reversa(cliente, caso):
+    """FR-011: las reglas deciden la evidencia solo con el trace, también en operaciones generadas."""
+    respuesta = cliente.post("/operaciones", json={"caso": caso})
+    assert respuesta.status_code == 201
+    id_generado = respuesta.json()["id"]
+
+    cuerpo = _diagnostico(cliente, id_generado)
+
+    assert cuerpo["evidencia_recomendacion"] == _reversas(cliente, id_generado)
+    assert cuerpo["evidencia_recomendacion"] != []
